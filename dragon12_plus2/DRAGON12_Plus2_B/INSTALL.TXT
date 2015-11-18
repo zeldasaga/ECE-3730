@@ -1,0 +1,80 @@
+
+1. Install AsmIDE on your computer.
+
+Extract the files from the ZIP archive into a folder on your
+hard disk. I normally use the folder "C:\AsmIDE", but you 
+can select any folder.
+
+Now start AsmIDE.exe.
+
+
+2. COM Port Selection.
+
+The first time you run it, it asks if you want to select your COM
+port. Say Yes.  
+
+This configuration item is used to select the COM port that you
+will use with the Terminal window, and with the Download function.
+Pick your port in the dropdown box. It defaults to 9600 baud, but
+you can change it if you need to.
+
+NOTE: If you will be using the Wytec 68hc11 Tools, then you won't
+be able to use them same COM port with both the terminal window and
+the Wytec Tools. It's best to disable the terminal window if you
+will be using the Wytec Tools, unless you will be using a different
+COM port.
+
+
+3. Assembler
+
+Before you press OK, switch to the Assembler tab in this dialog. 
+(If you pressed OK before coming here, then select "View..Options,
+Assembler" to return here.
+
+The main configuration item you need to select here is the type of
+processor you want to use. You must select either 68hc11 or 68hc12
+as your Currently Selected Chip Family. This is used to select
+which Assembler will be executed to assemble your programs. This is
+also used to select your Assembler helpfile.
+
+This configuration tab also shows the path names of your assembler
+executables and help files. These will normally be correctly set up
+for you, but you may need to change them in special situations.
+
+
+4. Filename Associations
+
+Before you press OK, switch to the Associations tab in this dialog. 
+(If you pressed OK before coming here, then select "View..Options,
+Associations" to return here.
+
+This option allows you to associate your assembler file extension
+to AsmIDE. This lets you double-click on an assembler file in Windows 
+Explorer to launch AsmIDE to edit the file.
+
+Specify the extension of the assembler files you normally use. It
+defaults to .asm, but you can change it.
+
+Press the "Associate Assembler Files with AsmIDE" button to make
+this association. 
+
+
+5. Wytec 68hc11 Tools
+
+The Wytec company has a couple proprietary programs used to
+download .s19 files, and to interact with the debugger on their
+68hc11 EVB boards. These tools are only used with the Wytec 68hc11
+Phantom monitor. If you have the Buffalo monitor, then you don't
+need these tools.
+
+If you have the Wytec software loaded on your computer (in the
+default directories), then the pathnames for the Wytec tools will
+be setup for you automatically. If you don't have the Wytec tools,
+then leave these pathnames blank.
+
+You must disable the Wytec tools if you want to use the Terminal
+window on the same COM port. For obvious reasons, you can't have 2
+programs using the same COM port at the same time. However, you can
+use both the Wytec tools and the Terminal window at the same time
+if you are using different COM ports.
+

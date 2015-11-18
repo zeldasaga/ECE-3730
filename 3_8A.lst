@@ -1,0 +1,75 @@
+
+3_8A.asm               Assembled with CASM12Z  11/2/2015  1:11:24 PM  PAGE 1
+
+
+
+                            1  ;Lab 3.8
+                            2  ;Programmer Name: Zachary Hall
+                            3  ;Purpose: Simulates control of two DC motors.  
+                            4  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                               ;;;;;;;;
+                            5  ;Data
+                            6  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                               ;;;;;;;;
+                            7  ;
+ 000800                   8                                     ORG    $0800
+ 000800      0000         9  T_A                                        FDB    
+                                   $0000                                       
+                                ;Memory locations $0800-$0801
+ 000802      0000        10  T_C                                        FDB    
+                                   $0000                                       
+                                ;Memory locations $0802-$0803
+ 000804      0000        11  T_TOTAL                            FDB        
+                               $0000                                        
+                               ;Memory locations $0804-$0805
+ 000806      0000        12  DELTA_VELOCITY_LOC FDB        $0000               
+                                                ;Memory locations $0806-$0807
+ 000808      0000        13  FILLER                             FDB        
+                               $0000                                        
+                               ;Memory locations $0808-$0809
+ 00080A      0000        14  V_CONSTANT_Loc             FDB        $0000       
+                                                                ;Memory 
+                               locations $080A-$080B
+ 00080C      0000        15  T_TOTAL_Loc                        FDB        
+                               $0000                                        
+                               ;Memory locations $080C-$080D
+                           16  
+                           17  ;LEFT_MOTOR                      EQU        
+                               ;some output pin
+                           18  ;RIGHT_MOTOR             EQU        ;some 
+                               output pin
+                           19  ;T_TOTAL                         FDB        
+                               $03E8
+                           20  
+                           21  ;main program that calls two subroutines
+ 004200                  22                                     ORG        
+                               $4200
+                           23                                   ;Load .s19 
+                               info into T_TOTAL_LOC
+ 004200 [03] FC0804      24                                     LDD        
+                               T_TOTAL
+                           25  ;                                        MUL
+                           26  ;Subroutine 1: call-by-value using registers 
+                               A,B,X, and Y
+                           27  ;                                        LDD    
+                                   #$T_TOTAL_LOC
+                           28  ;                                        MULT   
+                           29  ;Subroutine 2: call-by-reference using the 
+                               address of the parameter
+                           30   
+
+ Symbol Table 
+
+DELTA_VELOCITY_L 000806
+
+
+3_8A.asm               Assembled with CASM12Z  11/2/2015  1:11:24 PM  PAGE 2
+
+
+
+FILLER           000808
+T_A              000800
+T_C              000802
+T_TOTAL          000804
+T_TOTAL_LOC      00080C
+V_CONSTANT_LOC   00080A

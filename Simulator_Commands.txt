@@ -1,0 +1,10 @@
+Simulator Commands
+
+MD - Memory Display
+MM - Memory Modify
+BF - Block Fill
+ASM - Does same as ORG
+RM - Register Modify
+PC - set Program Counter
+T - Trace one instruction at a time
+T X - Trace through X number of instructions

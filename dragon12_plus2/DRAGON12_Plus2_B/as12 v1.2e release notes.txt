@@ -1,0 +1,240 @@
+ 
+                     as12 v1.2e Release Notes
+
+I'd like to thank Matthew W. Kincaid for his bug fixes in this release,
+and for migrating the as11 code into the main project for as12. This
+gives the as11 assembler more features and a high degree of compatibility
+with as12.
+
+Thanks to Matthew we are also distributing a linux source code version
+now. AsmIDE is not linux-compatible at this time, but you can use as11
+and as12 to assemble your code in linux.
+
+I'd also like to thank Tom Almy and Brian Nutter for their assistance.
+
+
+These bugs were fixed in as12, v1.2e:
+
+1. There was a problem with program counter relative addressing. We had
+   work-arounds for this problem, but now this syntax is correctly
+   handled in 1.2e:
+
+       brclr CRGFLG,#$08,*+0
+
+       brclr REGISTER %00001000 *
+ 
+       jsr destination-*-4,pc
+
+2. There was a problem that prevented us from properly handling
+   program counter relative addressing with some commands, and
+   there was no work-around. For example, this didn't work:
+
+         brclr	status,#mask,*
+
+
+3. We had a bug that prevented binary constants from being listed 
+   in the list file:
+
+	ldaa	#%10100001   ; CALL EEPROM for Read
+
+   appeared in the LST file as:
+
+        20a5 86 a1    	ldaa	# ; CALL EEPROM for Read
+
+4. The "!" prefix to specify decimal numbers was not supported in older 
+   versions of the assembler, and this caused coding errors:
+
+        ldy #!10    ; does not work correctly
+                    ; generates warning and assembles as "ldy #0"
+                    
+
+    Some commercail assemblers recognize these prefixes:
+         % binary
+         ! decimal
+         $ hex
+         @ octal
+
+    As12 used to accept all of these prefixes except "!", and now we accept
+    that prefix, too. Decimal is still our default, and you can't change the
+    default in as12, so you never have to specify "!". But now your code that
+    might use "!" will assemble ok in as12.
+
+
+5. We used to silently mask an argument down to an 8-bit size without telling
+   the programmer.
+
+    ldaa #$1234       ; put hex $34 into A, an 8-bit register
+                      ; the high byte is lost.
+
+   We now generate a warning.
+
+6. These special suffixes are used by come commercial assemblers:
+
+      Trailing 'H' or 'h' is same as leading $ for hexadecimal constants.
+      Trailing 'Q' or 'q' is same as leading % for binary constants.
+      Trailing 'T' or 't' is same as leading ! for decimal constants.
+
+   This as12 assembler does not recognize any of these suffixes, so it treated 
+   them as the start of a comment in your source code:
+
+       ldaa #10Q      ; put decimal 10 into A - Q is ignored
+       ldab #10T      ; put decimal 10 into B - T is ignored
+       ldx #10H       ; put decimal 10 into X - H is ignored
+
+   Now we still don't accept this syntax, but we will give you an error 
+   instead of suprising you at runtime.
+
+7. Missing operands were taken as zero rather than giving an error. 
+   Now we will give a warning to say that a value of 0 was assumed.
+
+8. We used to allow either spaces or commas to act as delimiters. This was
+   sometimes confusing. Now we allow either spaces or commas, but not both
+   in the same instruction.
+
+9. Any extraneous characters should be an error, not ignored.
+   Programmers would be confused if they made a coding mistake like this:
+
+	lds  #$PRSTART
+
+   which gave no error but set the stack pointer to zero (causing an
+   eventual crash). Why? Because the $ is taken as a constant zero and 
+   PRSTART as a comment!
+
+   In 1.2e we will give an error in this example, but sometimes we'll
+   just give a warning to say that a value of 0 was assumed if we're not
+   completely sure that it's an error.
+
+-----------------------------------------------------------------
+
+                Known Shortcomings and Unfixed bugs
+
+Starting with this release I will try to keep documentation on "issues" 
+that we aren't able to fix at this time. If anyone would like to work 
+on solutions for these open issues, please send me email: 
+englere.geo@yahoo.com
+
+1. We won't accept embedded spaces in expressions now. This will produce
+   an incorrect assembly:
+
+      ldaa foo + 1
+
+   The correct way to write this expression is:
+ 
+      ldaa foo+1
+  
+           
+2. You get warnings when assembling the file "testcase.asm":
+
+
+     #WARN line 85, testcase.asm: Missing Expression, 0 assumed
+
+   
+   You get a LOT of these warnings on testcase.asm.
+
+   This is NOT a bug. This is an intentional warning message because
+   it can help a programmer to realize a coding error. 
+
+   I'll agree to call it an "issue" because it confuses people who
+   wanted us to assume zero. But the value of this warning is important
+   in those cases where you did not really want a zero to be assumed!
+
+3. Invalid addressing mode is not reported as an error.
+
+      ldy #$1280              ; put $1280 into Y
+      ldaa #2                 ; put 2 into A
+      ldx A,Y+                ; Should be assembly error because
+                              ; pre- and post- increment only work with fixed
+                              ; values of offset. However, the assembler
+                              ; likes it and results are erratic because
+                              ; mishandled opcode byte goes in.
+
+   Not addressed in v1.2e.
+
+4. Ideally labels should require a trailing colon. Colons should not be allowed 
+   elsewhere. Trailing colons should be required whenever you define a label, 
+   and a colon shouldn't be used when you reference a label.
+
+   Not addressed in v1.2e.
+
+5. Ideally there should be no significance to column 1. we treat "*" as a comment
+   indicator, but only if it's in column 1. Also, labels must begin in column 1. 
+   You get into trouble if someone puts their opcode in column 1 by mistake, 
+   since we don't require a trailing colon to define a label - it assumes the
+   opcode is a label!
+
+   It would be great if we required labels to have trailing colons when they
+   are defined. These changes would help identify coding errors, and eliminate
+   the need to put labels and equates in column 1, but it would also break some 
+   working code. It should be controlled with a commandline switch so existing 
+   programs don't need to be converted.
+ 
+   Not addressed in v1.2e.
+
+6. Comments should start after a semicolon, not after the last operand.
+   Anything after the last operand is taken as a comment. Sane
+   assemblers would require a ";" to indicate a comment.
+
+   Not addressed in v1.2e.
+
+
+7. We should eliminate instruction mnemonics which aren't documented in the 
+   Motorola literature. I believe that lda ldb sta and stb are defined, 
+   which are actually better choices for ldaa, etc. because they match
+   the names of the 16 bit loads/stores, but alas Motorola decided to 
+   have inconsistant names (we should do it Motorola's way).
+
+   These opcodes are defined in as12, but aren't considered standard. This
+   is mostly an issue for people who might want to migrate their code to a 
+   different assembler in the future - that other assembler won't understand
+   these opcodes (although in many cases you can get around it by defining 
+   a macro for each of these):
+
+      bkgnd   - alias for bgnd 
+      cbnz    - alias for dbeq
+      cmpd    - alias for cpd 
+      cmps    - alias for cps
+      cmpx    - alias for cpx
+      cmpy    - alias for cpy
+      lbsr    - alias for jsr
+      lda     - alias for ldaa
+      ldad    - alias for ldd
+      ldb     - alias for ldab
+      ora     - alias for oraa
+      orb     - alias for orab
+      pshbyte - alias for movb
+      pshword - alias for movw
+      pulbyte - alias for movb
+      pulword - alias for movw
+      sta     - alias for staa
+      stb     - alias for stab
+      swpb    - alias for tap
+      wavr    - alias for wav
+
+    Not addressed in v1.2e. If we decide to disallow the opcodes above, 
+    we should control it with a commandline switch, because it will
+    definitely break some existing programs.
+
+8. Impliment "PCR" for program counter relative addressing. "PCR" is not
+   just a simple alias for "*", but rather it points to the effective
+   address that would be used as the base in calculating a relative
+   offset. This is a handy feature offered by many commercial assemblers.
+
+   Not addressed in v1.2e.
+ 
+9. CPU cycle counts are different bet hc12 and hcs12 in some cases.
+   We don't make an attempt to give accurate cycle counts in all cases.
+   Some commercial assemblers supports a directive that lets you tell it
+   what flavor of CPU you have and then it can give accurate counts.
+
+   Not addressed in v1.2e.
+
+
+
+Please send me bug reports, and suggested coding changes. I can't spend a
+lot of time on this because my job keeps me extremely busy. But I would
+like to at least keep track of bugs and "known issues", and I'll publish
+an updated list occasionally.
+
+Eric Engler
+englere.geo@yahoo.com
+

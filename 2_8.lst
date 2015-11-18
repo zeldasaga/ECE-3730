@@ -1,0 +1,77 @@
+
+2_8.asm                Assembled with CASM12Z  9/21/2015  3:30:55 PM  PAGE 1
+
+
+
+                            1   ;Programmer's Name: Zachary Hall
+                            2   ;Class: ECE 3730
+                            3   ;Program 2.8 from the book
+                            4   ;Simulates reading IR values from a robot and 
+                               checking them against a 
+                            5   ;threshold value of $55
+                            6   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 004000                   7             ORG     $4000
+ 004000                   8  THRSH      EQU     $55
+                            9  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 004100                  10             ORG             $4100
+                           11  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                           12  ;Read data from $4000 and store it in $0800
+ 004100 [03] B64000      13  ONE                LDAA    $4000
+ 004103 [03] 7A0800      14             STAA    $0800
+ 004106 [01] 8155        15             CMPA    #$55
+ 004108 [03] 2302        16             BLS             TWO
+ 00410A [03] 2018        17             BRA             SUB1
+                           18  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                           19  ;Read data from $4001 and store it in $0801
+ 00410C [03] B64001      20  TWO                LDAA    $4001
+ 00410F [03] 7A0801      21             STAA    $0801
+ 004112 [01] 8155        22             CMPA    #$55
+ 004114 [03] 2302        23             BLS             THREE
+ 004116 [03] 201C        24             BRA             SUB2
+                           25  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                           26  ;Read data from $4002 and store it in $0802
+ 004118 [03] B64002      27  THREE      LDAA    $4002
+ 00411B [03] 7A0802      28             STAA    $0802
+ 00411E [01] 8155        29             CMPA    #$55
+ 004120 [03] 2321        30             BLS             END
+ 004122 [03] 2017        31             BRA             SUB3
+                           32   
+                           33  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                           34  ;Subroutine on first data set
+ 004124 [01] C601        35  SUB1       LDAB   #$01
+ 004126 [01] 8600        36             LDAA   #$00   
+ 004128 [02] 1806        37  AGAIN      ABA   
+ 00412A [03] 7A0800      38             STAA   $0800
+ 00412D [01] C105        39             CMPB   #$05
+ 00412F [03] 27DB        40             BEQ        TWO 
+ 004131 [01] 52          41             INCB
+ 004132 [03] 20F4        42             BRA        AGAIN
+                           43  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 004134 [01] 8600        44  SUB2       LDAA    #$00
+ 004136 [03] 7A0801      45             STAA    $0801
+ 004139 [03] 20DD        46             BRA             THREE
+                           47  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 00413B [03] B60802      48  SUB3       LDAA    $0802
+ 00413E [01] 8010        49             SUBA    #$10
+ 004140 [03] 7A0802      50             STAA    $0802
+                           51   
+                           52  END
+                           53   
+
+ Symbol Table 
+
+AGAIN            004128
+
+
+2_8.asm                Assembled with CASM12Z  9/21/2015  3:30:55 PM  PAGE 2
+
+
+
+END              004143
+ONE              004100
+SUB1             004124
+SUB2             004134
+SUB3             00413B
+THREE            004118
+THRSH            000055
+TWO              00410C

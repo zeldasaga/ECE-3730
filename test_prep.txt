@@ -1,0 +1,45 @@
+Chapter 1
+	Components of computers - memory, CPU, buses/interconnections, I/O devices
+	What is an embedded system - a system that uses a microprocessor but doesn't look like a computer
+Chapter 2
+	All them Registers
+	CCR - Know the flags
+	Stack Pointer
+	Pg. 17 for all this ^^
+	Instruction set definition - all of the instructions available to a particular architecture
+	Arithmetic shifting preserves sign bit
+	Logical shift does not preserve the sign bit
+	Addressing Modes - Immediate: address is part of the instruction
+			   Relative: 
+			   Inherent: Instruction needs no operands
+			   Direct: Only uses a one byte address because the first byte is considered to be 00
+			   Extended: give full 2 byte address
+			   Index: 
+			   Indirect: Goes to memory twice
+	Directives: Instructions for the assembler that will not be compiled
+Chapter 3
+	2 pass assembly - symbol table first, then machine code conversion second
+	loops
+	stack - use LDS, know push and pull steps (when it increments/decrements, etc.)
+	subroutines - 
+	call-by-value - use a copy via a register
+	call-by-reference - use the original value by using the address location
+Chapter 5
+	Modes of Operation - pg. 175, Figure 5.6
+	Register Block - the registers that we have been using (there are 512)
+	DDR - Data Direction Registers
+	Memory Mapped Registers
+	Memory Address Space - 2^16
+	Serial Communication - Multiple Serial Interface (SCI 0, SCI 1, SPI)
+	Electrical Compatibility - pg 196-197
+	Switch Debouncing
+	pg. 208, Figure 5.20 - understand the diagram and why the components are there for isolation
+	H-bridge - controls the direction of the motor pg.209-210
+Chapter 6
+	Exceptions - breaks in normal operations: resets and interrupts
+	COP reset - pg. 227, Figure 6.6
+	maskable/nonmaskable interrupts - SEI, CLI
+	Exception Vector - Table that holds the addresses of ISRs pg. 234-236.  In EPROM (special equipment is needed to change it).
+	Set User Vector - Table that holds the addresses of ISRs in RAM (no special equipment needed to change it)
+	HPRIO register - change priority of maskable interrupts
+	Real Time Interrupt System - 

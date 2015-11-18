@@ -1,0 +1,209 @@
+
+Changes made in version 3.40  July 17, 2007
+
+  Added a new auto option to disable Hyperbaud. This feature can confuse some
+  new users so now it can be disabled.
+
+  Converted the help file to the CHM format to give the best compatibility
+  with Windows Vista.
+
+Changes made in version 3.30  June 23, 2007
+
+  Serveral people reported problems opening certain files that had the linux end-
+  of-line convention, or embedded hard tabs. To ensure that AsmIDE will correctly
+  edit those files it will now examine every file when it's opened and it will
+  automatically make any conversions necessary.
+
+  Corrected the distribution of as12.exe; my last release of AsmIDE inadvertently 
+  included a few debug changes to as12 that I didn't intend to release. Although
+  the date of this as12 is older than the last one, the one included here is the
+  best version and is consistent with the source code posted on my site for as12.
+
+  Vista compatibility: to use the AsmIDE help file in Vista you have to download 
+  the WinHlp32.exe program from Microsoft if you haven't already done so:
+
+    http://go.microsoft.com/fwlink/?LinkID=82148
+
+Changes made in version 3.20  April 22, 2007
+
+  Updated the Syntax Highlighting editor to the latest version. This seems faster
+  and has fewer bugs.
+
+Changes made in version 3.15  May 6, 2006
+
+  Fixed a bug in AutoSave, and fixed a bug in as12 that caused too many #endinclude
+  statements to be generated.
+
+Changes made in version 3.14  April 29, 2006
+
+  Fixed another bug reported by Jorge Perez: the editor got confused if you said
+  you wanted to close the file, but then you hit Cancel when it asked if you want 
+  to save your changes.
+
+Changes made in version 3.13  April 22, 2006
+
+  Fixed a bug reported by Jorge Perez: there was no way to close dump windows.
+  Now all the dump windows will close when you close the Asm file.
+
+  While looking into this, I found that the Auto commands were being run twice
+  if you clicked on the Download button, but once if you clicked on the Assemble
+  button. Now the auto commands are run only once regardless of which button
+  you press.
+
+  I added a better include file for 9s12c32 MCU's, and modified Blink32.asm
+  to use it. I also added a new demo Blinkc32-fly.asm for the Wytec DragonFly
+  with docking board. Both of these are good demos for use with Pluto.
+
+
+Changes made in version 3.12a  April 14, 2006
+
+  I didn't change the IDE this time - I only updated the as11.exe and as12.exe.
+  These assemblers will now add an "#endinclude" statement automatically into
+  the list file at the end of every included file. This is used by the Pluto 
+  debugger to automatically "fold" the include files.
+
+
+Changes made in version 3.12  April 2, 2006
+
+  JC Prandi identified a bug that prevented you from opening a different file, which has
+  now been corrected. 
+
+  I reorganized the View, Options, Auto Functions checkboxes.
+
+  I updated the helpfile.
+
+  I added an option to specify the Pluto Debugger in the View..Options, Assembler, 6812
+  Options. Pluto is still in early development, so this will only be for early testers
+  using the 9s12C32 at this time. Send me email if you want to test this.
+
+
+Changes made in version 3.11  March 13, 2006
+
+  JC Prandi identified a problem in the SRecCvt feature which has now been corrected
+
+
+Changes made in version 3.1  February 25, 2006
+
+  Andrew 'Otis' Tubesing suggested these changes:
+
+    1) Add a printer setup dialog to let people select a printer
+
+    2) Create a print dialog like that used on EmbeddedGNU to give some extra print options
+
+    3) When switching from the text editor window to the terminal window, put the cursor
+       in the terminal window automatically
+
+  I also added these features:
+
+    4) After assembly, whether the assembly is successful or not, open the list file
+       in another window. This is a readonly display that has syntax highlighting.
+
+    5) On the View, Options dialog for AutoFunctions, break out the option that controls
+       filename prompting so you can specify separately if you want to be prompted for a
+       filename during assembly, or for downloads. Default both for no prompting if a
+       file is currently open in the editor.
+
+Changes made in version 3.02  October 9, 2005
+
+  Brent Gardner reported3 problems. I was able to fix 2 of them, but the third problem
+  is apparently a limitation of binload, so its not something I can fix.
+
+  1) AsmIDE cannot find binload sometimes. I fixed it so it will always look in the
+     same folder as AsmIDE.exe, regardless of what folder was used to start it.
+
+  2) AsmIDE cannot find it's help file sometimes. Similar to above, and fixed the
+     same way.
+
+  3) binload can't download .s19 files if the path or filenames contain spaces.
+     This can't be fixed since I don't have source code for binload. My future
+     serial debugger won't have this problem.
+
+
+Changes made in version 3.01  July 7, 2005
+
+1) File, Save was fixed. This was broke in the version 3.0 update.
+2) Updated as11 and as12 to the newest code that inserts a form-feed char
+   as the first char in the symbol file. This is used by legacy software to
+   identify the file format.
+
+
+Changes made in version 3.0 beta 1  Apr 11, 2005
+
+1) AutoLoad - This will automatically download your .s19 file to the board if your assembly 
+   completes without errors. This sends the LOAD command to your monitor, and then sends    the .s19 file.
+
+2) AutoGo - This will automatically begin program execution by sending the GO command to    your monitor.
+
+3) AutoDump - This waits for your program to finish execution, then it automatically sends    one or more dump commands to the monitor (MD). To make it easier for you to look at the    dumped memory info, it will automatically create a new window in the IDE for each dump
+   you specify!
+   You can easily scroll through the data. It also does a register dump for you    automatically anytime you specify a dump. You can print all of the dump windows easily
+   with File, Print All Dumps.
+
+4) The IDE now automatically re-opens the last assembler file you worked on
+
+5) The new DUMP toolbar button performs an "on demand" dump anytime you want it.
+
+6) The new HYPERBAUD toolbar button sends a new baud rate command to the monitor, and then    it changes your serial port to the new baud rate. For now the hyper baud rate is fixed at    57600.
+ 
+   IMPORTANT: When you reset your board it will go back to 9600 baud. You will need to push    the Hyperbaud button to return AsmIDE to 9600 baud.
+
+   I normally use Hyperbaud all the time, and I press the Hyperbaud button twice after    every reset so I can stay at the fast speed,
+
+7) You can program text values for function keys to be sent from the terminal window. See    the configuration options.
+
+8) I added some support for the 68hc908 family, but I don't have a downloader for this    family yet.
+
+All of the AUTO commands (1, 2, and 3 above) are programmable by giving the command text as 
+comments in your source code. Here's an example of one of these special comment lines:
+
+   ;AsmIDE AutoLoad="Load" AutoGo="g 2000" AutoDump="md 2000 2040" AutoDump="md 3000 3040"
+
+The new features are enabled by default, but you can disable them through the Options
+screens in case you find that they don't work right for your board, or COM port, etc. These
+features are also not used unless you add the special ";AsmIDE" comment line in your source code, because this comment line tells me exactly which auto commands you want me to generate
+for that particular source code file. The memory addresses in this line should be customized
+for each particular program.
+
+The AutoDump command is the most magic of these commands because it sits and waits for your
+program to finish. The best way to end your program is to use the SWI assembler instruction
+because this will preserve the register values, and you will see the right register values
+in the Register dump display. However, we often write "infinite loop" programs that never 
+really finish - we just press the RESET button on the board to end the program. This method of ending the program causes your monitor to be reset, so the register contents will be changed and the Register dump display won't show the register contents that were being used
+by your program when it was interupted by the reset button. If you really need to know what 
+values were in the registers, then you can either end the program with SWI, or you can save
+those values to memory locations and specify an AutoDump to display those memory locations. 
+User RAM memory contents are preserved accross a reset.</P>
+
+These features are great time-savers when you're developing programs that run from RAM. You can press the Assemble button, if you get an error-free assembly, it can automatically 
+download the .s19 file to the RAM on your device, it can automatically give it the "go" 
+command to begin execution, and it can automatically dump memory areas when the program ends.
+This will save a LOT of time during program development!
+
+
+Changes made in version 2.8a  June 26, 2004
+
+1) fixed the Print function on the File menu
+
+
+Changes made in version 2.8  May 31, 2004
+
+1) Expand the COM Port range. This allows you to use a virtual COM port
+   that might be set up by a USB-to-COM port adapter. You need this
+   kind of device if your computer doesn't have any COM ports, but does
+   have USB ports.
+
+2) Add Copy, Paste, and "Log To File" to Terminal Window (right-click
+   options). "Log To File" helps you keep track of what you do in this
+   window. This is a big help for debugging sessions using a monitor 
+   like Buffalo or d-bug12.
+
+3) Allow you to associate your assembler file extension to AsmIDE.
+   This lets you double-click on an assembler file in Windows 
+   Explorer to launch AsmIDE to edit the file.
+
+4) Add support for the 6809 processor
+
+5) Add support for binload to download programs to the 9S12C32 board
+   using the Motorola serial monitor.
+
+   

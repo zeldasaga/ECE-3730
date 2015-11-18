@@ -1,0 +1,15 @@
+:Base AsmIDE.hlp
+:Title AsmIDE
+:Index dummy=dummy.hlp ;(This is necessary when using KLinks - because of a bug in the help
+:Link dummy.hlp        ; compiler. Without this only the first keyword would be looked up!)
+1 Configure AsmIDE=SHM_contents0001@AsmIDE.hlp
+1 How to Assemble a sample source file=SHM_contents0002@AsmIDE.hlp
+1 How to create a new Assembler Source file=SHM_contents0003@AsmIDE.hlp
+1 How to download an .S19 file to an embedded board=SHM_contents0004@AsmIDE.hlp
+1 How to use the Wytec 68hc11 Tools=SHM_contents0005@AsmIDE.hlp
+1 General Info=SHM_contents0006@AsmIDE.hlp
+1 9S12C32 Special Procedures=SHM_contents0007@AsmIDE.hlp
+1 SRecCVT for 68hc12=SHM_contents0008@AsmIDE.hlp
+1 Auto features for all processor types=SHM_contents0009@AsmIDE.hlp
+1 Auto Commands for d-bug12 only=SHM_contents0010@AsmIDE.hlp
+1 Keyboard Shortcuts in Editor=SHM_contents0011@AsmIDE.hlp

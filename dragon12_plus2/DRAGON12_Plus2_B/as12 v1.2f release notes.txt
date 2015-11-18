@@ -1,0 +1,18 @@
+ 
+                     as12 v1.2f Release Notes
+
+I added a form-feed character to the beginning of the list file. This is used by legacy
+programs to identify the file format.
+
+No other changes this time!
+
+
+
+Please send me bug reports, and suggested coding changes. I can't spend a
+lot of time on this because my job keeps me extremely busy. But I would
+like to at least keep track of bugs and "known issues", and I'll publish
+an updated list occasionally.
+
+Eric Engler
+englere.geo@yahoo.com
+

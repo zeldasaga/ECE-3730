@@ -1,0 +1,25 @@
+
+as12, an absolute assembler for Motorola MCU's, version 1.2h
+
+                        
+0fde                            ORG        $0FDE
+0fde 57 43                      FCC        "WC"                        ;ID word
+                        
+                        ; The following 16 bytes will be displayed at the 1st line of the LCD
+0fe0 44 52 41 47 4f 4e          FCC     "DRAGON12 TRAINER"        ; $0FE0-$0FEE
+     31 32 20 54 52 41
+     49 4e 45 52
+                        ;               "1234567890123456"        ; 16 dummy bytes for alignment purpose
+                        ;
+                        ; This file should only contain 18 bytes ( 2 ID bytes and 16 data bytes).  Do not add more data.
+                        ; The content at $0FFD gets copied into BPROT ($114) upon reset 
+                        ; Be careful not to adversely write anything at $0FFD to write-protect EEPROM 
+                        ; or you may have to use a BDM to unprotect it.
+                        
+                                 end
+                        
+                        
+
+Executed: Sun Jul 01 01:16:00 2007
+Total cycles: 0, Total bytes: 18
+Total errors: 0, Total warnings: 0

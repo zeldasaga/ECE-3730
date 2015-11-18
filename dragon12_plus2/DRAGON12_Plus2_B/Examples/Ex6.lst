@@ -1,0 +1,828 @@
+
+as12, an absolute assembler for Motorola MCU's, version 1.2h
+
+                        ; Ex6.asm  ---- Example program 6 for the DRAGON12-Plus2 Rev. A board
+                        ;               (c)2012, EVBplus.com
+                        ;     Author: Wayne Chu
+                        ;     Date: 4/12/12
+                        ;
+                        ;     The new Dragon12-Plus2 board added a 3.3V power supply, a Micro SD memory
+                        ;     card holder, Bluetooth, Xbee and Nordic nRF24L01+ wireless interfaces.
+                        ;     It also provides Arduino Shield Compatible headers and an automatic power
+                        ;     switching circuit for selecting power from USB port or external AC
+                        ;     adapter.
+                        ;
+                        ;     Function: This example program is not intended for teaching a user how to
+                        ;               write HCS12 code. In fact it was ported from our 68HC11
+                        ;               test program, so most instructions were written in 68HC11 code.
+                        ;
+                        ;               Plays a song via timer5 (PT5)
+                        
+                        
+0004                    DB2        equ        4
+0008                    DB3        equ        8
+0010                    DB4        equ        $10
+0020                    DB5        equ        $20
+0040                    DB6        equ        $40
+                        
+0004                    OL5        equ        DB2
+0008                    OM5        equ        DB3
+                        
+5dc0                    TB1MS:     equ        24000        ; 1ms time base of 24000 instruction cycles
+                        ;                                ; 24,000 x 1/24MHz = 1ms at 24 MHz bus speed
+                        
+                        
+0000                    REGBLK:    equ        $0
+                        #include   reg9s12.h        ; include register equates
+                        *
+                        *
+                        *  HC12 I/O register locations (9s12dp256)
+                        *
+                        *
+0000                    porta:          equ 0   ;port a = address lines a8 - a15
+0001                    portb:          equ 1   ;port b = address lines a0 - a7
+0002                    ddra:           equ 2   ;port a direction register
+0003                    ddrb:           equ 3   ;port a direction register
+                        
+0008                    porte:          equ 8   ;port e = mode,irqandcontrolsignals
+0009                    ddre:           equ 9   ;port e direction register
+000a                    pear:           equ $a  ;port e assignments
+000b                    mode:           equ $b  ;mode register
+000c                    pucr:           equ $c  ;port pull-up control register
+000d                    rdriv:          equ $d  ;port reduced drive control register
+000e                    ebictl:		equ $e  ;e stretch control
+                        
+0010                    initrm:         equ $10 ;ram location register
+0011                    initrg:         equ $11 ;register location register
+0012                    initee:         equ $12 ;eeprom location register
+0013                    misc:           equ $13 ;miscellaneous mapping control
+0014                    mtst0:          equ $14 ; reserved
+0015                    itcr:           equ $15 ;interrupt test control register
+0016                    itest:          equ $16 ;interrupt test register
+0017                    mtst1:          equ $17 ; reserved
+                        
+001a                    partidh:	equ $1a ;part id high
+001b                    partidl:	equ $1b ;part id low
+001c                    memsiz0:	equ $1c ;memory size
+001d                    memsiz1:	equ $1d ;memory size
+001e                    intcr:          equ $1e ;interrupt control register
+001f                    hprio:          equ $1f ;high priority reg
+                        
+0028                    bkpct0:         equ $28 ;break control register
+0029                    bkpct1:         equ $29 ;break control register
+002a                    bkp0x:          equ $2a ; break 0 index register
+002b                    bkp0h:          equ $2b ; break 0 pointer high
+002c                    brp0l:          equ $2c ; break 0 pointer low
+002d                    bkp1x:          equ $2d ; break 1 index register
+002e                    bkp1h:          equ $2e ; break 1 pointer high
+002f                    brp1l:          equ $2f ; break 1 pointer low
+0030                    ppage:		equ $30 ;program page register
+                        
+0032                    portk:		equ $32 ;port k data
+0033                    ddrk:		equ $33 ;port k direction
+0034                    synr:           equ $34 ; synthesizer / multiplier register
+0035                    refdv:          equ $35 ; reference divider register
+0036                    ctflg:          equ $36 ; reserved
+0037                    crgflg:         equ $37 ; pll flags register
+0038                    crgint:         equ $38 ; pll interrupt register
+0039                    clksel:         equ $39 ; clock select register
+003a                    pllctl:         equ $3a ; pll control register
+003b                    rtictl:         equ $3b ;real time interrupt control
+003c                    copctl:         equ $3c ;watchdog control
+003d                    forbyp:         equ $3d ;
+003e                    ctctl:          equ $3e ;
+003f                    armcop:         equ $3f ;cop reset register
+                        
+0040                    tios:           equ $40 ;timer input/output select
+0041                    cforc:          equ $41 ;timer compare force
+0042                    oc7m:           equ $42 ;timer output compare 7 mask
+0043                    oc7d:           equ $43 ;timer output compare 7 data
+0044                    tcnt:           equ $44 ;timer counter register hi
+                        *tcnt:          equ $45 ;timer counter register lo
+0046                    tscr:           equ $46 ;timer system control register
+0046                    tscr1:           equ $46 ;timer system control register
+0047                    ttov:           equ $47 ;reserved
+0048                    tctl1:          equ $48 ;timer control register 1
+0049                    tctl2:          equ $49 ;timer control register 2
+004a                    tctl3:          equ $4a ;timer control register 3
+004b                    tctl4:          equ $4b ;timer control register 4
+004c                    tmsk1:       equ $4c ;timer interrupt mask 1
+004c                    tie:             equ $4c ;timer interrupt mask 1
+004d                    tmsk2:       equ $4d ;timer interrupt mask 2
+004d                    tscr2:         equ $4d ;timer interrupt mask 2
+004e                    tflg1:          equ $4e ;timer flags 1
+004f                    tflg2:          equ $4f ;timer flags 2
+0050                    tc0:            equ $50 ;timer capture/compare register 0
+0052                    tc1:            equ $52 ;timer capture/compare register 1
+0054                    tc2:            equ $54 ;timer capture/compare register 2
+0056                    tc3:            equ $56 ;timer capture/compare register 3
+0058                    tc4:            equ $58 ;timer capture/compare register 4
+005a                    tc5:            equ $5a ;timer capture/compare register 5
+005c                    tc6:            equ $5c ;timer capture/compare register 6
+005e                    tc7:            equ $5e ;timer capture/compare register 7
+0060                    pactl:          equ $60 ;pulse accumulator controls
+0061                    paflg:          equ $61 ;pulse accumulator flags
+0062                    pacn3:          equ $62 ;pulse accumulator counter 3
+0063                    pacn2:          equ $63 ;pulse accumulator counter 2
+0064                    pacn1:          equ $64 ;pulse accumulator counter 1
+0065                    pacn0:          equ $65 ;pulse accumulator counter 0
+0066                    mcctl:          equ $66 ;modulus down conunter control
+0067                    mcflg:          equ $67 ;down counter flags
+0068                    icpar:          equ $68 ;input pulse accumulator control
+0069                    dlyct:          equ $69 ;delay count to down counter
+006a                    icovw:          equ $6a ;input control overwrite register
+006b                    icsys:          equ $6b ;input control system control
+                        
+006d                    timtst:         equ $6d ;timer test register
+                        
+0070                    pbctl:          equ $70 ; pulse accumulator b control
+0071                    pbflg:          equ $71 ; pulse accumulator b flags
+0072                    pa3h:           equ $72 ; pulse accumulator holding register 3
+0073                    pa2h:           equ $73 ; pulse accumulator holding register 2
+0074                    pa1h:           equ $74 ; pulse accumulator holding register 1
+0075                    pa0h:           equ $75 ; pulse accumulator holding register 0
+0076                    mccnt:          equ $76 ; modulus down counter register
+                        *mccntl:        equ $77 ; low byte
+0078                    tcoh:           equ $78 ; capture 0 holding register
+007a                    tc1h:           equ $7a ; capture 1 holding register
+007c                    tc2h:           equ $7c ; capture 2 holding register
+007e                    tc3h:           equ $7e ; capture 3 holding register
+                        
+0080                    atd0ctl0:       equ $80 ;adc control 0 (reserved)
+0081                    atd0ctl1:       equ $81 ;adc control 1 (reserved)
+0082                    atd0ctl2:       equ $82 ;adc control 2
+0083                    atd0ctl3:       equ $83 ;adc control 3
+0084                    atd0ctl4:       equ $84 ;adc control 4
+0085                    atd0ctl5:       equ $85 ;adc control 5
+0086                    atd0stat:       equ $86 ;adc status register hi
+                        *atd0stat       equ $87 ;adc status register lo
+0088                    atd0test:       equ $88 ;adc test (reserved)
+                        *atd0test       equ $89 ;
+                        
+008d                    atd0dien:	equ $8d ;
+                        
+008f                    portad:         equ $8f ;port adc = input only
+0090                    adr00h:         equ $90 ;adc result 0 register
+0092                    adr01h:         equ $92 ;adc result 1 register
+0094                    adr02h:         equ $94 ;adc result 2 register
+0096                    adr03h:         equ $96 ;adc result 3 register
+0098                    adr04h:         equ $98 ;adc result 4 register
+009a                    adr05h:         equ $9a ;adc result 5 register
+009c                    adr06h:         equ $9c ;adc result 6 register
+009e                    adr07h:         equ $9e ;adc result 7 register
+                        
+00a0                    pwme:		equ $a0 ;pwm enable
+00a1                    pwmpol:         equ $a1 ;pwm polarity
+00a2                    pwmclk:         equ $a2 ;pwm clock select register
+00a3                    pwmprclk:       equ $a3 ;pwm prescale clock select register
+00a4                    pwmcae:         equ $a4 ;pwm center align select register
+00a5                    pwmctl:         equ $a5 ;pwm control register
+00a6                    pwmtst:         equ $a6 ;reserved
+00a7                    pwmprsc:        equ $a7 ;reserved
+00a8                    pwmscla:        equ $a8 ;pwm scale a
+00a9                    pwmsclb:        equ $a9 ;pwm scale b
+00aa                    pwmscnta:       equ $aa ;reserved
+00ab                    pwmscntb:       equ $ab ;reserved
+00ac                    pwmcnt0:        equ $ac ;pwm channel 0 counter
+00ad                    pwmcnt1:        equ $ad ;pwm channel 1 counter
+00ae                    pwmcnt2:        equ $ae ;pwm channel 2 counter
+00af                    pwmcnt3:        equ $af ;pwm channel 3 counter
+00b0                    pwmcnt4:        equ $b0 ;pwm channel 4 counter
+00b1                    pwmcnt5:        equ $b1 ;pwm channel 5 counter
+00b2                    pwmcnt6:        equ $b2 ;pwm channel 6 counter
+00b3                    pwmcnt7:        equ $b3 ;pwm channel 7 counter
+00b4                    pwmper0:        equ $b4 ;pwm channel 0 period
+00b5                    pwmper1:        equ $b5 ;pwm channel 1 period
+00b6                    pwmper2:        equ $b6 ;pwm channel 2 period
+00b7                    pwmper3:        equ $b7 ;pwm channel 3 period
+00b8                    pwmper4:        equ $b8 ;pwm channel 4 period
+00b9                    pwmper5:        equ $b9 ;pwm channel 5 period
+00ba                    pwmper6:        equ $ba ;pwm channel 6 period
+00bb                    pwmper7:        equ $bb ;pwm channel 7 period
+00bc                    pwmdty0:        equ $bc ;pwm channel 0 duty cycle
+00bd                    pwmdty1:        equ $bd ;pwm channel 1 duty cycle
+00be                    pwmdty2:        equ $be ;pwm channel 2 duty cycle
+00bf                    pwmdty3:        equ $bf ;pwm channel 3 duty cycle
+00c0                    pwmdty4:        equ $c0 ;pwm channel 0 duty cycle
+00c1                    pwmdty5:        equ $c1 ;pwm channel 1 duty cycle
+00c2                    pwmdty6:        equ $c2 ;pwm channel 2 duty cycle
+00c3                    pwmdty7:        equ $c3 ;pwm channel 3 duty cycle
+00c4                    pwmsdn:         equ $c4 ;pwm shutdown register
+                        
+00c8                    sc0bdh:         equ $c8 ;sci 0 baud reg hi byte
+00c9                    sc0bdl:         equ $c9 ;sci 0 baud reg lo byte
+00ca                    sc0cr1:         equ $ca ;sci 0 control1 reg
+00cb                    sc0cr2:         equ $cb ;sci 0 control2 reg
+00cc                    sc0sr1:         equ $cc ;sci 0 status reg 1
+00cd                    sc0sr2:         equ $cd ;sci 0 status reg 2
+00ce                    sc0drh:         equ $ce ;sci 0 data reg hi
+00cf                    sc0drl:         equ $cf ;sci 0 data reg lo
+00d0                    sc1bdh:         equ $d0 ;sci 1 baud reg hi byte
+00d1                    sc1bdl:         equ $d1 ;sci 1 baud reg lo byte
+00d2                    sc1cr1:         equ $d2 ;sci 1 control1 reg
+00d3                    sc1cr2:         equ $d3 ;sci 1 control2 reg
+00d4                    sc1sr1:         equ $d4 ;sci 1 status reg 1
+00d5                    sc1sr2:         equ $d5 ;sci 1 status reg 2
+00d6                    sc1drh:         equ $d6 ;sci 1 data reg hi
+00d7                    sc1drl:         equ $d7 ;sci 1 data reg lo
+00d8                    spi0cr1:        equ $d8 ;spi 0 control1 reg
+00d9                    spi0cr2:        equ $d9 ;spi 0 control2 reg
+00da                    spi0br:         equ $da ;spi 0 baud reg
+00db                    spi0sr:         equ $db ;spi 0 status reg hi
+                        
+00dd                    sp0dr:          equ $dd ;spi 0 data reg
+                        
+00e0                    ibad:		equ $e0 ;i2c bus address register
+00e1                    ibfd:		equ $e1 ;i2c bus frequency divider
+00e2                    ibcr:		equ $e2 ;i2c bus control register
+00e3                    ibsr:		equ $e3 ;i2c bus status register
+00e4                    ibdr:		equ $e4 ;i2c bus message data register
+                        
+00e8                    dlcbcr1:	equ $e8 ;bdlc control regsiter 1
+00e9                    dlcbsvr:	equ $e9 ;bdlc state vector register
+00ea                    dlcbcr2:	equ $ea ;bdlc control register 2
+00eb                    dlcbdr:		equ $eb ;bdlc data register
+00ec                    dlcbard:	equ $ec ;bdlc analog delay register
+00ed                    dlcbrsr:	equ $ed ;bdlc rate select register
+00ee                    dlcscr:		equ $ee ;bdlc control register
+00ef                    dlcbstat:	equ $ef ;bdlc status register
+00f0                    spi1cr1:        equ $f0 ;spi 1 control1 reg
+00f1                    spi1cr2:        equ $f1 ;spi 1 control2 reg
+00f2                    spi1br:         equ $f2 ;spi 1 baud reg
+00f3                    spi1sr:         equ $f3 ;spi 1 status reg hi
+                        
+00f5                    sp1dr:          equ $f5 ;spi 1 data reg
+                        
+00f8                    spi2cr1:        equ $f8 ;spi 2 control1 reg
+00f9                    spi2cr2:        equ $f9 ;spi 2 control2 reg
+00fa                    spi2br:         equ $fa ;spi 2 baud reg
+00fb                    spi2sr:         equ $fb ;spi 2 status reg hi
+                        
+00fd                    sp2dr:          equ $fd ;spi 2 data reg
+                        
+0100                    fclkdiv:	equ $100 ;flash clock divider
+0101                    fsec:		equ $101 ;flash security register
+                        
+0103                    fcnfg:		equ $103 ;flash configuration register
+0104                    fprot:		equ $104 ;flash protection register
+0105                    fstat:		equ $105 ;flash status register
+0106                    fcmd:		equ $106 ;flash command register
+                        
+0110                    eclkdiv:	equ $110 ;eeprom clock divider
+                        
+0113                    ecnfg:		equ $113 ;eeprom configuration register
+0114                    eprot:		equ $114 ;eeprom protection register
+0115                    estat:		equ $115 ;eeprom status register
+0116                    ecmd:		equ $116 ;eeprom command register
+                        
+0120                    atd1ctl0:       equ $120 ;adc1 control 0 (reserved)
+0121                    atd1ctl1:       equ $121 ;adc1 control 1 (reserved)
+0122                    atd1ctl2:       equ $122 ;adc1 control 2
+0123                    atd1ctl3:       equ $123 ;adc1 control 3
+0124                    atd1ctl4:       equ $124 ;adc1 control 4
+0125                    atd1ctl5:       equ $125 ;adc1 control 5
+0126                    atd1stat:       equ $126 ;adc1 status register hi
+                        *atd1stat       equ $127 ;adc1 status register lo
+0128                    atd1test:       equ $128 ;adc1 test (reserved)
+                        *atd1test       equ $129 ;
+                        
+012d                    atddien:	equ $12d ;adc1 input enable register
+                        
+012f                    portad1:        equ $12f ;port adc1 = input only
+0130                    adr10h:         equ $130 ;adc1 result 0 register
+0132                    adr11h:         equ $132 ;adc1 result 1 register
+0134                    adr12h:         equ $134 ;adc1 result 2 register
+0136                    adr13h:         equ $136 ;adc1 result 3 register
+0138                    adr14h:         equ $138 ;adc1 result 4 register
+013a                    adr15h:         equ $13a ;adc1 result 5 register
+013c                    adr16h:         equ $13c ;adc1 result 6 register
+013e                    adr17h:         equ $13e ;adc1 result 7 register
+0140                    can0ctl0:	equ $140 ;can0 control register 0
+0141                    can0ctl1:	equ $141 ;can0 control register 1
+0142                    can0btr0:	equ $142 ;can0 bus timing register 0
+0143                    can0btr1:	equ $143 ;can0 bus timing register 1
+0144                    can0rflg:	equ $144 ;can0 receiver flags
+0145                    can0rier:	equ $145 ;can0 receiver interrupt enables
+0146                    can0tflg:	equ $146 ;can0 transmit flags
+0147                    can0tier:	equ $147 ;can0 transmit interrupt enables
+0148                    can0tarq:	equ $148 ;can0 transmit message abort control
+0149                    can0taak:	equ $149 ;can0 transmit message abort status
+014a                    can0tbel:	equ $14a ;can0 transmit buffer select
+014b                    can0idac:	equ $14b ;can0 identfier acceptance control
+                        
+014e                    can0rerr:	equ $14e ;can0 receive error counter
+014f                    can0terr:	equ $14f ;can0 transmit error counter
+0150                    can0ida0:	equ $150 ;can0 identifier acceptance register 0
+0151                    can0ida1:	equ $151 ;can0 identifier acceptance register 1
+0152                    can0ida2:	equ $152 ;can0 identifier acceptance register 2
+0153                    can0ida3:	equ $153 ;can0 identifier acceptance register 3
+0154                    can0idm0:	equ $154 ;can0 identifier mask register 0
+0155                    can0idm1:	equ $155 ;can0 identifier mask register 1
+0156                    can0idm2:	equ $156 ;can0 identifier mask register 2
+0157                    can0idm3:	equ $157 ;can0 identifier mask register 3
+0158                    can0ida4:	equ $158 ;can0 identifier acceptance register 4
+0159                    can0ida5:	equ $159 ;can0 identifier acceptance register 5
+015a                    can0ida6:	equ $15a ;can0 identifier acceptance register 6
+015b                    can0ida7:	equ $15b ;can0 identifier acceptance register 7
+015c                    can0idm4:	equ $15c ;can0 identifier mask register 4
+015d                    can0idm5:	equ $15d ;can0 identifier mask register 5
+015e                    can0idm6:	equ $15e ;can0 identifier mask register 6
+015f                    can0idm7:	equ $15f ;can0 identifier mask register 7
+0160                    can0rxfg:	equ $160 ;can0 rx foreground buffer thru +$16f
+0170                    can0txfg:	equ $170 ;can0 tx foreground buffer thru +$17f
+                        
+0180                    can1ctl0:	equ $180 ;can1 control register 0
+0181                    can1ctl1:	equ $181 ;can1 control register 1
+0182                    can1btr0:	equ $182 ;can1 bus timing register 0
+0183                    can1btr1:	equ $183 ;can1 bus timing register 1
+0184                    can1rflg:	equ $184 ;can1 receiver flags
+0185                    can1rier:	equ $185 ;can1 receiver interrupt enables
+0186                    can1tflg:	equ $186 ;can1 transmit flags
+0187                    can1tier:	equ $187 ;can1 transmit interrupt enables
+0188                    can1tarq:	equ $188 ;can1 transmit message abort control
+0189                    can1taak:	equ $189 ;can1 transmit message abort status
+018a                    can1tbel:	equ $18a ;can1 transmit buffer select
+018b                    can1idac:	equ $18b ;can1 identfier acceptance control
+                        
+018e                    can1rerr:	equ $18e ;can1 receive error counter
+018f                    can1terr:	equ $18f ;can1 transmit error counter
+0190                    can1ida0:	equ $190 ;can1 identifier acceptance register 0
+0191                    can1ida1:	equ $191 ;can1 identifier acceptance register 1
+0192                    can1ida2:	equ $192 ;can1 identifier acceptance register 2
+0193                    can1ida3:	equ $193 ;can1 identifier acceptance register 3
+0194                    can1idm0:	equ $194 ;can1 identifier mask register 0
+0195                    can1idm1:	equ $195 ;can1 identifier mask register 1
+0196                    can1idm2:	equ $196 ;can1 identifier mask register 2
+0197                    can1idm3:	equ $197 ;can1 identifier mask register 3
+0198                    can1ida4:	equ $198 ;can1 identifier acceptance register 4
+0199                    can1ida5:	equ $199 ;can1 identifier acceptance register 5
+019a                    can1ida6:	equ $19a ;can1 identifier acceptance register 6
+019b                    can1ida7:	equ $19b ;can1 identifier acceptance register 7
+019c                    can1idm4:	equ $19c ;can1 identifier mask register 4
+019d                    can1idm5:	equ $19d ;can1 identifier mask register 5
+019e                    can1idm6:	equ $19e ;can1 identifier mask register 6
+019f                    can1idm7:	equ $19f ;can1 identifier mask register 7
+01a0                    can1rxfg:	equ $1a0 ;can1 rx foreground buffer thru +$1af
+01b0                    can1txfg:	equ $1b0 ;can1 tx foreground buffer thru +$1bf
+                        
+01c0                    can2ctl0:	equ $1c0 ;can2 control register 0
+01c1                    can2ctl1:	equ $1c1 ;can2 control register 1
+01c2                    can2btr0:	equ $1c2 ;can2 bus timing register 0
+01c3                    can2btr1:	equ $1c3 ;can2 bus timing register 1
+01c4                    can2rflg:	equ $1c4 ;can2 receiver flags
+01c5                    can2rier:	equ $1c5 ;can2 receiver interrupt enables
+01c6                    can2tflg:	equ $1c6 ;can2 transmit flags
+01c7                    can2tier:	equ $1c7 ;can2 transmit interrupt enables
+01c8                    can2tarq:	equ $1c8 ;can2 transmit message abort control
+01c9                    can2taak:	equ $1c9 ;can2 transmit message abort status
+01ca                    can2tbel:	equ $1ca ;can2 transmit buffer select
+01cb                    can2idac:	equ $1cb ;can2 identfier acceptance control
+                        
+01ce                    can2rerr:	equ $1ce ;can2 receive error counter
+01cf                    can2terr:	equ $1cf ;can2 transmit error counter
+01d0                    can2ida0:	equ $1d0 ;can2 identifier acceptance register 0
+01d1                    can2ida1:	equ $1d1 ;can2 identifier acceptance register 1
+01d2                    can2ida2:	equ $1d2 ;can2 identifier acceptance register 2
+01d3                    can2ida3:	equ $1d3 ;can2 identifier acceptance register 3
+01d4                    can2idm0:	equ $1d4 ;can2 identifier mask register 0
+01d5                    can2idm1:	equ $1d5 ;can2 identifier mask register 1
+01d6                    can2idm2:	equ $1d6 ;can2 identifier mask register 2
+01d7                    can2idm3:	equ $1d7 ;can2 identifier mask register 3
+01d8                    can2ida4:	equ $1d8 ;can2 identifier acceptance register 4
+01d9                    can2ida5:	equ $1d9 ;can2 identifier acceptance register 5
+01da                    can2ida6:	equ $1da ;can2 identifier acceptance register 6
+01db                    can2ida7:	equ $1db ;can2 identifier acceptance register 7
+01dc                    can2idm4:	equ $1dc ;can2 identifier mask register 4
+01dd                    can2idm5:	equ $1dd ;can2 identifier mask register 5
+01de                    can2idm6:	equ $1de ;can2 identifier mask register 6
+01df                    can2idm7:	equ $1df ;can2 identifier mask register 7
+01e0                    can2rxfg:	equ $1e0 ;can2 rx foreground buffer thru +$1ef
+01f0                    can2txfg:	equ $1f0 ;can2 tx foreground buffer thru +$1ff
+                        
+0200                    can3ctl0:	equ $200 ;can3 control register 0
+0201                    can3ctl1:	equ $201 ;can3 control register 1
+0202                    can3btr0:	equ $202 ;can3 bus timing register 0
+0203                    can3btr1:	equ $203 ;can3 bus timing register 1
+0204                    can3rflg:	equ $204 ;can3 receiver flags
+0205                    can3rier:	equ $205 ;can3 receiver interrupt enables
+0206                    can3tflg:	equ $206 ;can3 transmit flags
+0207                    can3tier:	equ $207 ;can3 transmit interrupt enables
+0208                    can3tarq:	equ $208 ;can3 transmit message abort control
+0209                    can3taak:	equ $209 ;can3 transmit message abort status
+020a                    can3tbel:	equ $20a ;can3 transmit buffer select
+020b                    can3idac:	equ $20b ;can3 identfier acceptance control
+                        
+020e                    can3rerr:	equ $20e ;can3 receive error counter
+020f                    can3terr:	equ $20f ;can3 transmit error counter
+0210                    can3ida0:	equ $210 ;can3 identifier acceptance register 0
+0211                    can3ida1:	equ $211 ;can3 identifier acceptance register 1
+0212                    can3ida2:	equ $212 ;can3 identifier acceptance register 2
+0213                    can3ida3:	equ $213 ;can3 identifier acceptance register 3
+0214                    can3idm0:	equ $214 ;can3 identifier mask register 0
+0215                    can3idm1:	equ $215 ;can3 identifier mask register 1
+0216                    can3idm2:	equ $216 ;can3 identifier mask register 2
+0217                    can3idm3:	equ $217 ;can3 identifier mask register 3
+0218                    can3ida4:	equ $218 ;can3 identifier acceptance register 4
+0219                    can3ida5:	equ $219 ;can3 identifier acceptance register 5
+021a                    can3ida6:	equ $21a ;can3 identifier acceptance register 6
+021b                    can3ida7:	equ $21b ;can3 identifier acceptance register 7
+021c                    can3idm4:	equ $21c ;can3 identifier mask register 4
+021d                    can3idm5:	equ $21d ;can3 identifier mask register 5
+021e                    can3idm6:	equ $21e ;can3 identifier mask register 6
+021f                    can3idm7:	equ $21f ;can3 identifier mask register 7
+0220                    can3rxfg:	equ $220 ;can3 rx foreground buffer thru +$22f
+0230                    can3txfg:	equ $230 ;can3 tx foreground buffer thru +$23f
+                        
+0240                    ptt:		equ $240 ;portt data register
+0241                    ptit:		equ $241 ;portt input register
+0242                    ddrt:		equ $242 ;portt direction register
+0243                    rdrt:		equ $243 ;portt reduced drive register
+0244                    pert:		equ $244 ;portt pull device enable
+0245                    ppst:		equ $245 ;portt pull polarity select
+                        
+0248                    pts:		equ $248 ;ports data register
+0249                    ptis:		equ $249 ;ports input register
+024a                    ddrs:		equ $24a ;ports direction register
+024b                    rdrs:		equ $24b ;ports reduced drive register
+024c                    pers:		equ $24c ;ports pull device enable
+024d                    ppss:		equ $24d ;ports pull polarity select
+024e                    woms:		equ $24e ;ports wired or mode register
+                        
+0250                    ptm:		equ $250 ;portm data register
+0251                    ptim:		equ $251 ;portm input register
+0252                    ddrm:		equ $252 ;portm direction register
+0253                    rdrm:		equ $253 ;portm reduced drive register
+0254                    perm:		equ $254 ;portm pull device enable
+0255                    ppsm:		equ $255 ;portm pull polarity select
+0256                    womm:		equ $256 ;portm wired or mode register
+0257                    modrr:		equ $257 ;portm module routing register
+0258                    ptp:		equ $258 ;portp data register
+0259                    ptip:		equ $259 ;portp input register
+025a                    ddrp:		equ $25a ;portp direction register
+025b                    rdrp:		equ $25b ;portp reduced drive register
+025c                    perp:		equ $25c ;portp pull device enable
+025d                    ppsp:		equ $25d ;portp pull polarity select
+025e                    piep:		equ $25e ;portp interrupt enable register
+025f                    pifp:		equ $25f ;portp interrupt flag register
+0260                    pth:		equ $260 ;porth data register
+0261                    ptih:		equ $261 ;porth input register
+0262                    ddrh:		equ $262 ;porth direction register
+0263                    rdrh:		equ $263 ;porth reduced drive register
+0264                    perh:		equ $264 ;porth pull device enable
+0265                    ppsh:		equ $265 ;porth pull polarity select
+0266                    pieh:		equ $266 ;porth interrupt enable register
+0267                    pifh:		equ $267 ;porth interrupt flag register
+0268                    ptj:		equ $268 ;portj data register
+0269                    ptij:		equ $269 ;portj input register
+026a                    ddrj:		equ $26a ;portj direction register
+026b                    rdrj:		equ $26b ;portj reduced drive register
+026c                    perj:		equ $26c ;portj pull device enable
+026d                    ppsj:		equ $26d ;portj pull polarity select
+026e                    piej:		equ $26e ;portj interrupt enable register
+026f                    pifj:		equ $26f ;portj interrupt flag register
+                        
+0280                    can4ctl0:	equ $280 ;can4 control register 0
+0281                    can4ctl1:	equ $281 ;can4 control register 1
+0282                    can4btr0:	equ $282 ;can4 bus timing register 0
+0283                    can4btr1:	equ $283 ;can4 bus timing register 1
+0284                    can4rflg:	equ $284 ;can4 receiver flags
+0285                    can4rier:	equ $285 ;can4 receiver interrupt enables
+0286                    can4tflg:	equ $286 ;can4 transmit flags
+0287                    can4tier:	equ $287 ;can4 transmit interrupt enables
+0288                    can4tarq:	equ $288 ;can4 transmit message abort control
+0289                    can4taak:	equ $289 ;can4 transmit message abort status
+028a                    can4tbel:	equ $28a ;can4 transmit buffer select
+028b                    can4idac:	equ $28b ;can4 identfier acceptance control
+                        
+028e                    can4rerr:	equ $28e ;can4 receive error counter
+028f                    can4terr:	equ $28f ;can4 transmit error counter
+0290                    can4ida0:	equ $290 ;can4 identifier acceptance register 0
+0291                    can4ida1:	equ $291 ;can4 identifier acceptance register 1
+0292                    can4ida2:	equ $292 ;can4 identifier acceptance register 2
+0293                    can4ida3:	equ $293 ;can4 identifier acceptance register 3
+0294                    can4idm0:	equ $294 ;can4 identifier mask register 0
+0295                    can4idm1:	equ $295 ;can4 identifier mask register 1
+0296                    can4idm2:	equ $296 ;can4 identifier mask register 2
+0297                    can4idm3:	equ $297 ;can4 identifier mask register 3
+0298                    can4ida4:	equ $298 ;can4 identifier acceptance register 4
+0299                    can4ida5:	equ $299 ;can4 identifier acceptance register 5
+029a                    can4ida6:	equ $29a ;can4 identifier acceptance register 6
+029b                    can4ida7:	equ $29b ;can4 identifier acceptance register 7
+029c                    can4idm4:	equ $29c ;can4 identifier mask register 4
+029d                    can4idm5:	equ $29d ;can4 identifier mask register 5
+029e                    can4idm6:	equ $29e ;can4 identifier mask register 6
+029f                    can4idm7:	equ $29f ;can4 identifier mask register 7
+02a0                    can4rxfg:	equ $2a0 ;can4 rx foreground buffer thru +$2af
+02b0                    can4txfg:	equ $2b0 ;can4 tx foreground buffer thru +$2bf
+                        
+                        * end registers
+                        #endinclude
+
+                        
+0d65                    F3500HZ:   equ        3429
+                        
+1000                               org        $1000
+1000                    spk_tone:        rmb        2
+1002                    sound_dur:       rmb        1
+1003                    xsound_save:     rmb        2
+1005                    sound_repeat:    rmb        1
+1006                    xsound_beg:      rmb        2
+1008                    sound_start:     rmb        1
+1009                    rest_note:       rmb        1
+100a                    count_5ms:       rmb        1
+                        
+                        
+                        ; for 24 MHz bus speed
+                        ; 1200000 / 261.63 Hz = note count
+                        
+b32a                    c3        equ        45866                ; 261.63 Hz at 24 MHz
+a91d                    c3s        equ        43293                ; 277.18 Hz at 24 MHz
+9fa0                    d3        equ        40864                ; 293.66 Hz at 24 MHz
+96a9                    d3s        equ        38569                ; 311.13 Hz at 24 MHz
+8e34                    e3        equ        36404                ; 329.63 Hz at 24 MHz
+8639                    f3        equ        34361                ; 349.23 Hz at 24 MHz
+7eb1                    f3s        equ        32433                ; 369.99 Hz at 24 MHz
+7795                    g3        equ        30613                ; 391.99 Hz at 24 MHz
+70de                    g3s        equ        28894                ; 415.31 Hz at 24 MHz
+6a89                    a3        equ        27273                ; 440.00 Hz at 24 MHz
+648e                    a3s        equ        25742                ; 466.16 Hz at 24 MHz
+5ee9                    b3        equ        24297                ; 493.88 Hz at 24 MHz
+                        
+5996                    c4        equ        22934                ; 523.25 Hz at 24 MHz
+548e                    c4s        equ        21646                ; 554.37 Hz at 24 MHz
+4fcf                    d4        equ        20431                ; 587.33 Hz at 24 MHz
+4b55                    d4s        equ        19285                ; 622.25 Hz at 24 MHz
+471a                    e4        equ        18202                ; 659.26 Hz at 24 MHz
+431d                    f4        equ        17181                ; 698.46 Hz at 24 MHz
+3f58                    f4s        equ        16216                ; 739.99 Hz at 24 MHz
+3bca                    g4        equ        15306                ; 783.99 Hz at 24 MHz
+386f                    g4s        equ        14447                ; 830.61 Hz at 24 MHz
+3544                    a4        equ        13636                ; 880.00 Hz at 24 MHz
+3247                    a4s        equ        12871                ; 932.32 Hz at 24 MHz
+2f75                    b4        equ        12149                ; 987.77 Hz at 24 MHz
+                        
+2ccb                    c5        equ        11467                ; 1046.50 Hz at 24 MHz
+2a47                    c5s        equ        10823                ; 1108.73 Hz at 24 MHz
+27e8                    d5        equ        10216                ; 1174.66 Hz at 24 MHz
+25aa                    d5s        equ        9642                ; 1244.51 Hz at 24 MHz
+238d                    e5        equ        9101                ; 1318.51 Hz at 24 MHz
+218e                    f5        equ        8590                ; 1396.91 Hz at 24 MHz
+1fac                    f5s        equ        8108                ; 1479.98 Hz at 24 MHz
+1de5                    g5        equ        7653                ; 1567.98 Hz at 24 MHz
+1c39                    g5s        equ        7225                ; 1661.22 Hz at 24 MHz
+1aa2                    a5        equ        6818                ; 1760.00 Hz at 24 MHz
+1923                    a5s        equ        6435                ; 1864.66 Hz at 24 MHz
+17ba                    b5        equ        6074                ; 1975.53 Hz at 24 MHz
+                        
+1665                    c6        equ        5733                ; 2093.00 Hz at 24 MHz
+1524                    c6s        equ        5412                ; 2217.46 Hz at 24 MHz
+13f5                    d6        equ        5109                ; 2349.32 Hz at 24 MHz
+12d5                    d6s        equ        4821                ; 2489.02 Hz at 24 MHz
+11c7                    e6        equ        4551                ; 2637.02 Hz at 24 MHz
+10c7                    f6        equ        4295                ; 2793.83 Hz at 24 MHz
+0fd6                    f6s        equ        4054                ; 2959.96 Hz at 24 MHz
+0ef3                    g6        equ        3827                ; 3135.97 Hz at 24 MHz
+0e1c                    g6s        equ        3612                ; 3322.44 Hz at 24 MHz
+0d51                    a6        equ        3409                ; 3520.00 Hz at 24 MHz
+0c92                    a6s        equ        3218                ; 3729.31 Hz at 24 MHz
+0bdd                    b6        equ        3037                ; 3951.07 Hz at 24 MHz
+                        
+0b33                    c7        equ        2867                ; 4186.01 Hz at 24 MHz
+0a92                    c7s        equ        2706                ; 4434.92 Hz at 24 MHz
+09fa                    d7        equ        2554                ; 4698.64 Hz at 24 MHz
+096b                    d7s        equ        2411                ; 4978.03 Hz at 24 MHz
+08e3                    e7        equ        2275                ; 5274.04 Hz at 24 MHz
+0864                    f7        equ        2148                ; 5587.66 Hz at 24 MHz
+07eb                    f7s        equ        2027                ; 5919.92 Hz at 24 MHz
+0779                    g7        equ        1913                ; 6271.93 Hz at 24 MHz
+070e                    g7s        equ        1806                ; 6644.88 Hz at 24 MHz
+06a9                    a7        equ        1705                ; 7040.00 Hz at 24 MHz
+0649                    a7s        equ        1609                ; 7458.63 Hz at 24 MHz
+05ef                    b7        equ        1519                ; 7902.13 Hz at 24 MHz
+0001                    c8        equ        1                ; for rest note
+                        
+0000                    note_c        equ        0
+0001                    note_cs       equ        1
+0002                    note_d        equ        2
+0003                    note_ds       equ        3
+0004                    note_e        equ        4
+0005                    note_f        equ        5
+0006                    note_fs       equ        6
+0007                    note_g        equ        7
+0008                    note_gs       equ        8
+0009                    note_a        equ        9
+000a                    note_as       equ        10
+000b                    note_b        equ        11
+                        
+                        ; dur18= 1/8 note,  dur14= 1/4 note,  $fe= rest_note, $ff = end of song
+                                
+0032                    dur18         equ        50
+0064                    dur14         equ        100
+                                
+2000                    STACK:        equ        $2000
+                        
+2000                            org        $2000
+2000 06 20 a5                   jmp        start
+                        
+2003                    NOTE_TABLE:
+2003 b3 2a a9 1d 9f a0          fdb        c3,c3s,d3,d3s,e3,f3,f3s,g3,g3s,a3,a3s,b3
+     96 a9 8e 34 86 39
+     7e b1 77 95 70 de
+     6a 89 64 8e 5e e9
+201b 00 00 00 00 00 00          fdb        0,0,0,0                ; dummy byte
+     00 00
+2023 59 96 54 8e 4f cf          fdb        c4,c4s,d4,d4s,e4,f4,f4s,g4,g4s,a4,a4s,b4
+     4b 55 47 1a 43 1d
+     3f 58 3b ca 38 6f
+     35 44 32 47 2f 75
+203b 00 00 00 00 00 00          fdb        0,0,0,0                ; dummy byte
+     00 00
+2043 2c cb 2a 47 27 e8          fdb        c5,c5s,d5,d5s,e5,f5,f5s,g5,g5s,a5,a5s,b5
+     25 aa 23 8d 21 8e
+     1f ac 1d e5 1c 39
+     1a a2 19 23 17 ba
+205b 00 00 00 00 00 00          fdb        0,0,0,0                ; dummy byte
+     00 00
+2063 16 65 15 24 13 f5          fdb        c6,c6s,d6,d6s,e6,f6,f6s,g6,g6s,a6,a6s,b6
+     12 d5 11 c7 10 c7
+     0f d6 0e f3 0e 1c
+     0d 51 0c 92 0b dd
+207b 00 00 00 00 00 00          fdb        0,0,0,0                ; dummy byte
+     00 00
+2083 0b 33 0a 92 09 fa          fdb        c7,c7s,d7,d7s,e7,f7,f7s,g7,g7s,a7,a7s,b7
+     09 6b 08 e3 08 64
+     07 eb 07 79 07 0e
+     06 a9 06 49 05 ef
+209b 00 00 00 00 00 00          fdb        0,0,0,0                ; dummy byte
+     00 00
+20a3 00 01                      fdb        c8
+                        
+                        
+20a5                    start:
+20a5 cf 20 00                   lds        #STACK
+20a8 ce 20 f4                   ldx        #timer6
+20ab 7e 3e 62                   stx        $3E62                ; initialize int vetctor
+20ae ce 21 72                   LDX        #timer5_spk
+20b1 7e 3e 64                   stx        $3E64
+                        
+20b4 ce 0d 65                   ldx        #F3500HZ               ; 3.5kHz
+20b7 7e 10 00                   stx        spk_tone
+                        
+20ba ce 00 00                   ldx        #REGBLK
+20bd 86 80                      ldaa       #$80
+20bf 6a e0 46                   staa       tscr,x                ; enable timer
+20c2 86 60                      ldaa       #DB5+DB6
+20c4 6a e0 40                   staa       tios,x                ; select t6 as an output compare
+20c7 6a e0 4c                   staa       tmsk1,x
+20ca 79 10 0a                   clr        count_5ms
+                        
+20cd 10 ef                      cli
+20cf 16 20 d8                   jsr        spk_on
+20d2 16 21 84                   jsr        start_sound                ; start sound
+20d5 06 20 d5           stp:    jmp        stp
+                        
+20d8                    spk_on:        
+20d8 34                         pshx
+20d9 ce 00 00                   ldx        #REGBLK
+20dc 0d e0 48 08                bclr       tctl1,x OM5
+20e0 0c e0 48 04                bset       tctl1,x OL5                ; toggle speaker
+20e4 30                         pulx
+20e5 3d                         rts
+20e6                    spk_off:
+20e6 34                         pshx
+20e7 ce 00 00                   ldx        #REGBLK
+20ea 0c e0 48 08                bset       tctl1,x OM5
+20ee 0d e0 48 04                bclr       tctl1,x OL5                ; turn off speaker
+20f2 30                         pulx
+20f3 3d                         rts
+                        
+20f4                    timer6:
+20f4 72 10 0a                   inc        count_5ms
+20f7 b6 10 0a                   ldaa       count_5ms
+20fa 81 05                      cmpa       #5
+20fc 26 62                      bne        tmr3
+20fe 79 10 0a                   clr        count_5ms
+                        ;
+                        ; processing every 5ms
+2101 b6 10 08                   ldaa       sound_start
+2104 27 5a                      beq        tmr3
+2106 b6 10 02                   ldaa       sound_dur                ; duration
+2109 43                         deca
+210a 7a 10 02                   staa       sound_dur
+210d 26 51                      bne        tmr3
+210f fe 10 03                   ldx        xsound_save
+2112 e6 00              repeat: ldab       0,x
+2114 c1 ff                      cmpb       #255
+2116 27 31                      beq        sound_end
+2118 a6 01                      ldaa       1,x
+211a 81 ff                      cmpa       #255
+211c 27 2b                      beq        sound_end
+211e 7a 10 02                   staa       sound_dur
+2121 08                         inx
+2122 08                         inx
+2123 7e 10 03                   stx        xsound_save
+2126 c1 fe                      cmpb       #$fe
+2128 26 0b                      bne        not_rest
+212a 86 01                      ldaa       #1
+212c 7a 10 09                   staa       rest_note
+212f 16 20 e6                   jsr        spk_off
+2132 06 21 60                   jmp        tmr3
+2135                    not_rest:
+2135 79 10 09                   clr        rest_note
+2138 16 20 d8                   jsr        spk_on
+213b ce 20 03                   ldx        #NOTE_TABLE
+213e 58                         aslb
+213f 1a e5                      abx
+2141 ee 00                      ldx        0,x
+2143 7e 10 00                   stx        spk_tone
+2146 06 21 60                   jmp        tmr3        
+2149                    sound_end:
+2149 b6 10 05                   ldaa       sound_repeat
+214c 27 06                      beq        no_rep
+214e fe 10 06                   ldx        xsound_beg
+2151 06 21 12                   jmp        repeat
+                        
+2154 ce 0d 65           no_rep: ldx        #F3500HZ        ; 3.5kHz
+2157 7e 10 00                   stx        spk_tone
+215a 16 20 e6                   jsr        spk_off
+215d 79 10 08                   clr        sound_start
+                        
+2160 ce 00 00           tmr3:   ldx        #REGBLK               ; in interrupt service routine
+2163 cc 5d c0                   ldd        #TB1MS                ; 1 ms time base
+2166 e3 e0 5c                   addd       tc6,x
+2169 6c e0 5c                   std        tc6,x
+216c 86 40                      ldaa       #DB6
+216e 6a e0 4e                   staa       tflg1,x               ; clear flag
+2171 0b                         rti
+                        
+2172                    timer5_spk:
+2172 ce 00 00                   ldx        #REGBLK                ; in interrupt service routine
+2175 fc 10 00                   ldd        spk_tone
+2178 e3 e0 5a                   addd       tc5,x
+217b 6c e0 5a                   std        tc5,x
+217e 86 20                      ldaa       #DB5
+2180 6a e0 4e                   staa       tflg1,x                ; clear flag
+2183 0b                         rti
+                        
+2184                    start_sound:
+2184 ce 21 ac                   ldx        #SONG
+2187 7e 10 06                   stx        xsound_beg
+218a 86 01                      ldaa       #1
+218c 7a 10 05                   staa       sound_repeat
+218f e6 00                      ldab       0,x
+2191 a6 01                      ldaa       1,x
+2193 7a 10 02                   staa       sound_dur
+2196 08                         inx
+2197 08                         inx
+2198 7e 10 03                   stx        xsound_save
+                        
+219b ce 20 03                   ldx        #NOTE_TABLE
+219e 58                         aslb
+219f 1a e5                      abx
+21a1 ee 00                      ldx        0,x
+21a3 7e 10 00                   stx        spk_tone
+21a6 86 01                      ldaa       #1
+21a8 7a 10 08                   staa       sound_start
+21ab 3d                         rts
+                        
+21ac 24 32              SONG:   fcb        $20+note_e,dur18
+21ae 23 32                      fcb        $20+note_ds,dur18
+21b0 24 32                      fcb        $20+note_e,dur18
+21b2 23 32                      fcb        $20+note_ds,dur18
+21b4 24 32                      fcb        $20+note_e,dur18
+21b6 1b 32                      fcb        $10+note_b,dur18
+21b8 22 32                      fcb        $20+note_d,dur18
+21ba 20 32                      fcb        $20+note_c,dur18
+21bc 19 64                      fcb        $10+note_a,dur14
+                        ;        fcb        $fe,dur18
+                        ;        fcb        255,255
+                        
+21be 04 32                      fcb        $00+note_e,dur18
+21c0 09 32                      fcb        $00+note_a,dur18
+21c2 10 32                      fcb        $10+note_c,dur18
+21c4 14 32                      fcb        $10+note_e,dur18
+21c6 19 32                      fcb        $10+note_a,dur18
+21c8 1b 64                      fcb        $10+note_b,dur14
+21ca 08 32                      fcb        $00+note_gs,dur18
+21cc 12 32                      fcb        $10+note_d,dur18
+21ce 14 32                      fcb        $10+note_e,dur18
+21d0 18 32                      fcb        $10+note_gs,dur18
+21d2 1b 32                      fcb        $10+note_b,dur18
+21d4 20 64                      fcb        $20+note_c,dur14
+                        
+21d6 04 32                      fcb        $00+note_e,dur18
+21d8 09 32                      fcb        $00+note_a,dur18
+21da 14 32                      fcb        $10+note_e,dur18
+21dc fe 64                      fcb        $fe,dur14
+21de ff ff                      fcb        255,255
+                        
+                        
+3e62                            org        $3e62
+3e62 20 f4                      fdb        timer6
+3e64                            org        $3e64
+3e64 21 72                      fdb        timer5_spk
+                                end
+
+Executed: Mon Apr 23 22:49:17 2012
+Total cycles: 318, Total bytes: 484
+Total errors: 0, Total warnings: 0
