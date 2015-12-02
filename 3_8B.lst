@@ -1,0 +1,247 @@
+
+as12, an absolute assembler for Motorola MCU's, version 1.2h
+
+                        ;Lab 3.8B
+                        ;Programmer Name: Zachary Hall, Andrew Bowns
+                        ;Purpose: Use D-Bug12 subroutines to interface with HC12/S12
+                        
+                        
+                        ;************************** DATA VALUES **************************
+1000                                            ORG           $1000            ;12K RAM Space
+1000 00 00              T_A                     FDB           $0000            ;Memory locations $0800-$0801
+1002 00 00              T_C                     FDB           $0000            ;Memory locations $0802-$0803
+1004 00 00              T_TOTAL                 FDB           $0000            ;Memory locations $0804-$0805
+1006 00 00              DELTA_VELOCITY_LOC      FDB           $0000            ;Memory locations $0806-$0807
+1008 00 00              FILLER                  FDB           $0000            ;Memory locations $0808-$0809
+100a 00 00              V_CONSTANT_Loc          FDB           $0000            ;Memory locations $080A-$080B
+100c 00 00              T_TOTAL_Loc             FDB           $0000            ;Memory locations $080C-$080D
+100e 00 00              INCREM_NUM              FDB           $0000            ;Memory location to store the incremental value
+1100                    RT_MOTOR_VEL_LOC        EQU           $1100            ;Starting memory of right motor
+1200                    LFT_MOTOR_VEL_LOC       EQU           $1200            ;Starting memory of left motor
+                        
+ee84                    GETCHAR                 EQU           $EE84            ;Vector address of GETCHAR subroutine
+ee86                    PUTCHAR                 EQU           $EE86            ;Vector address of PUTCHAR subroutine
+ee88                    PRINTF                  EQU           $EE88            ;Vector address of PRINTF subroutine
+                        
+1010 00 00              TARGET_SPD              FDB           $0000
+1012 00 00              TARGET_TIME             FDB           $0000
+2000                    STACK                   EQU           $2000               ;Stack start point
+                        
+1014 27 10              HIGH                    FDB           $2710               ;High Value 10k Decimal
+1016 03 e8              MEDIUM                  FDB           $03E8               ;Medium Value 1k Decimal
+1018 00 64              LOW                     FDB           $0064               ;Low Value 100 Decimal
+                        
+                        ;************************** SCREEN MESSAGES **************************
+101a 4d 4f 54 4f 52 20  PRINT_WELCOME           FCC           'MOTOR CONTROL SOFTWARE'
+     43 4f 4e 54 52 4f
+     4c 20 53 4f 46 54
+     57 41 52 45
+1030 0d 0a                                      FDB           $0D0A
+1032 00 00                                      FDB           $00
+                                                
+1034 50 6c 65 61 73 65  PRINT_LN_1              FCC           'Please choose a constant velocity:'
+     20 63 68 6f 6f 73
+     65 20 61 20 63 6f
+     6e 73 74 61 6e 74
+     20 76 65 6c 6f 63
+     69 74 79 3a
+1056 0d 0a                                      FDB           $0D0A
+1058 48 69 67 68 28 31  			FCC           'High(1), Medium(2), or Low(3)'
+     29 2c 20 4d 65 64
+     69 75 6d 28 32 29
+     2c 20 6f 72 20 4c
+     6f 77 28 33 29
+1075 0d 0a                                      FDB           $0D0A
+1077 00 00                                      FDB           $00
+                                                
+1079 50 6c 65 61 73 65  PRINT_TOT_TIME          FCC           'Please choose a total time period:'
+     20 63 68 6f 6f 73
+     65 20 61 20 74 6f
+     74 61 6c 20 74 69
+     6d 65 20 70 65 72
+     69 6f 64 3a
+109b 0d 0a                                      FDB           $0D0A
+109d 48 69 67 68 28 31                          FCC           'High(1), Medium(2), or Low(3)'
+     29 2c 20 4d 65 64
+     69 75 6d 28 32 29
+     2c 20 6f 72 20 4c
+     6f 77 28 33 29
+10ba 0d 0a                                      FDB           $0D0A
+10bc 00 00                                      FDB           $00
+                                                
+10be 56 65 6c 6f 63 69  PRINT_LN_3              FCC           'Velocity Profile'
+     74 79 20 50 72 6f
+     66 69 6c 65
+10ce 0d 0a                                      FDB           $0D0A
+10d0 00 00                                      FDB           $00
+                                                
+10d2                    PRINT_BLANK             FCC           	''
+10d2 0d 0a                                      FDB             $0D0A
+10d4 00 00                                      FDB             $00
+                                                
+10d6 56 45 4c 4f 43 49  PRINT_VEL_LNS           FCC           'VELOCITY %u:  %X'
+     54 59 20 25 75 3a
+     20 20 25 58
+10e6 0d 0a                                      FDB           $0D0A
+10e8 00 00                                      FDB           $00
+                                                
+10ea 54 41 3a 20        PRINT_TA                FCC           'TA: '
+10ee 54 43 3a 20        PRINT_TC                FCC           'TC: '
+10f2 54 54 4f 54 41 4c  PRINT_TTOTAL            FCC           'TTOTAL: '
+     3a 20
+10fa 44 45 4c 54 41 56  PRINT_DELTA_V           FCC           'DELTAV: '
+     3a 20
+                        
+                        ;************************** MAIN PROGRAM **************************
+2000                    MAIN                    ORG           $2000               ;Begin Program address
+2000 cf 20 00                                   LDS           #STACK              ;Load Stack with max address
+                        
+2003 cc 10 1a                                   LDD           #PRINT_WELCOME      ;Print welcome message
+2006 fe ee 88                                   LDX           PRINTF              ;
+2009 15 00                                      JSR           0,X                 ;
+                                                
+200b cc 10 34                                   LDD           #PRINT_LN_1         ;Query for Constant Velocity
+200e fe ee 88                                   LDX           PRINTF              ;*
+2011 15 00                                      JSR           0,X                 ;*
+                                                
+2013 fe ee 84           INPUT_SPEED             LDX           GETCHAR             ;Get user input for Constant Velocity
+2016 15 00                                      JSR           0,X                 ;*
+2018 fe ee 86                                   LDX           PUTCHAR             ;Echo user input
+201b 15 00                                      JSR           0,X                 ;*
+201d cc 10 d2                                   LDD           #PRINT_BLANK        ;Print a blank line
+2020 fe ee 88                                   LDX           PRINTF              ;*
+2023 15 00                                      JSR           0,X                 ;*
+                                                
+2025 7b 10 10                                   STAB          TARGET_SPD          ;?
+2028 96 31                                      LDAA          $31                 ;?
+202a 18 17                                      CBA                               ;
+202c 27 0a                                      BEQ           STORE_HIGH          ;
+202e 42                                         INCA                              ;
+202f 18 17                                      CBA                               ;
+2031 27 0d                                      BEQ           STORE_MED           ;
+2033 42                                         INCA                              ;
+2034 18 17                                      CBA                               ;
+2036 27 10                                      BEQ           STORE_LOW           ;
+                                                ;BNE           INPUT_SPEED
+2038 fc 10 14           STORE_HIGH              LDD           HIGH                ; Store HIGH Value to TARGET_SPD
+203b 7c 10 10                                   STD           TARGET_SPD          ;
+203e 20 0e                                      BRA           TIME_SLCT           ; Move on to time select
+2040 fc 10 16           STORE_MED               LDD           MEDIUM              ; Store MEDIUM Value to TARGET_SPD
+2043 7c 10 10                                   STD           TARGET_SPD          ;
+2046 20 06                                      BRA           TIME_SLCT           ; Move on to time select
+2048 fc 10 18           STORE_LOW               LDD           LOW                 ; Store LOW value to TARGET_SPD
+204b 7c 10 10                                   STD           TARGET_SPD          ;
+                        
+204e cc 10 79           TIME_SLCT               LDD           #PRINT_TOT_TIME     ;Query Total Time Period
+2051 fe ee 88                                   LDX           PRINTF              ;
+2054 15 00                                      JSR           0,X                 ;
+2056 fe ee 84                                   LDX           GETCHAR             ;Get user input
+2059 15 00                                      JSR           0,X                 ;
+205b fe ee 86                                   LDX           PUTCHAR             ;Echo user input
+205e 15 00                                      JSR           0,X                 ;
+2060 cc 10 d2                                   LDD           #PRINT_BLANK        ;Print blank line
+2063 fe ee 88                                   LDX           PRINTF              ;
+2066 15 00                                      JSR           0,X                 ;
+2068 7b 10 12                                   STAB          TARGET_TIME         ;?
+206b 96 31                                      LDAA          $31                 ;?
+206d 18 17                                      CBA                               ;?
+206f 27 0a                                      BEQ           STORE_HIGH_T        ; Branch to store High Time
+2071 42                                         INCA                              ;?
+2072 18 17                                      CBA                               ;?
+2074 27 0d                                      BEQ           STORE_MED_T         ; Branch to store Med Time
+2076 42                                         INCA
+2077 18 17                                      CBA
+2079 27 10                                      BEQ           STORE_LOW_T
+207b fc 10 14           STORE_HIGH_T            LDD           HIGH                ; TARGET_TIME = HIGH
+207e 7c 10 12                                   STD           TARGET_TIME         ;
+2081 20 0e                                      BRA           SUBROUTINES         ; GOTO SUBROUTINES
+2083 fc 10 16           STORE_MED_T             LDD           MEDIUM              ; TARGET_TIME = MEDIUM
+2086 7c 10 12                                   STD           TARGET_TIME         ;
+2089 20 06                                      BRA           SUBROUTINES         ; GOTO SUBROUTINES
+208b fc 10 18           STORE_LOW_T             LDD           LOW                 ; TARGET_TIME = LOW
+208e 7c 10 12                                   STD           TARGET_TIME         ;
+                        
+2091 fc 10 10           SUBROUTINES             LDD           TARGET_SPD          ; Load D with TARGET_SPEED
+2094 fd 10 12                                   LDY           TARGET_TIME         ; Load Y with TARGET_TIME
+2097 16 20 9a                                   JSR           SUB1                ; SUB1(D=TARGET_SPEED,Y=TARGET_TIME)
+                                                ;JSR           SUB2                ; Go to subroutine 2
+                                                ;JSR           SUB3                ; Print Velocity Profile
+                                                END
+                        ;************************** FUNCTIONS/SUBROUTINES **************************
+                        ;Subroutine 1
+                        ;Desc: call-by-value using registers D, X, and Y
+                        ;Params: D=TARGET_SPEED, Y=TARGET_TIME
+209a fc 10 12           SUB1                    LDD           TARGET_TIME     	  ;Load location of total time into register D
+209d 7d 10 04                                   STY           T_TOTAL             ;Store the total time into memory
+20a0 ce 00 05                                   LDX           #$0005              ;Load the divisor to find 20% of the total time
+20a3 18 10                                      IDIV                              ;Divide D by X and store in register X
+20a5 7e 10 00                                   STX           T_A                 ;Store register X in memory
+20a8 fd 10 00                                   LDY           T_A                 ;Load the acceleration/deceleration time into register y
+20ab cc 00 03                                   LDD           #$0003              ;Load 3 into register D
+20ae 13                                         EMUL                              ;Multiply the 20% value in Y by 3 to get the 60% constant velocity time
+20af 7c 10 02                                   STD           T_C                 ;Store that number into memory
+20b2 3d                                         RTS
+                                                                        
+                        ;Subroutine 2
+                        ;Desc: call-by-reference using the address of the parameter
+                        ;Params:
+                        ;Calculate 10 velocity values for each of the acceleration, constant, and deceleration intervals
+20b3 ce 00 0a           SUB2                    LDX          #$000A               ;Store 10 into register x for the number of time intervals
+20b6 fc 10 0a           RT_MOTOR                LDD          V_CONSTANT_LOC       ;Load the constant velocity number into register D
+20b9 18 10                                      IDIV                              ;Divide D by x and store the result in X
+20bb 7e 10 0e                                   STX          INCREM_NUM           ;store the result into memory
+20be cc 00 00                                   LDD          #0                   ;Make D zero
+20c1 7c 11 00                                   STD          RT_MOTOR_VEL_LOC     ;Store D into memory
+20c4 cd 11 00                                   LDY          #RT_MOTOR_VEL_LOC    ;Load the address of the right motor velocity profile into register Y
+                        
+                                                ;Add $0064 to each memory location until reaching $03E8
+20c7 f3 10 0e           ACCEL                   ADDD         INCREM_NUM           ;Add the velocity increment value to D and store it in D
+20ca 6c 61                                      STD          $2,+Y                ;Increment the memory location and store register D into memory
+20cc bc 10 0a                                   CPD          V_CONSTANT_LOC       ;Compare D to the final velocity
+20cf 2b f6                                      BMI          ACCEL                ;If D is less, repeat the process
+20d1 b7 45                                      TFR          D,X                  ;Move contents of register D into X
+20d3 86 08                                      LDAA         #$08                 ;Load accumulator A with a count of 8
+                        
+20d5 6e 61              CONST                   STX          $2,+Y                ;Store the constant velocity into 9 more memory locations
+20d7 81 00                                      CMPA         #$00
+20d9 27 03                                      BEQ          DECEL
+20db 43                                         DECA
+20dc 20 f7                                      BRA          CONST
+                        
+20de b7 54              DECEL                   TFR          X,D                  ;Transfer the final velocity back into D
+20e0 b3 10 0e           DEC_LOOP                SUBD         INCREM_NUM           ;Subtract the increment value from D
+20e3 6c 61                                      STD          $2,+Y                ;Store the values in subsequent memory locations
+20e5 8c 00 00                                   CPD          #0                   ;
+20e8 26 f6                                      BNE          DEC_LOOP             ;
+                        
+20ea cd 12 00           LFT_MOTOR               LDY          #LFT_MOTOR_VEL_LOC   ;
+20ed ce 11 00                                   LDX          #RT_MOTOR_VEL_LOC    ;
+20f0 86 1e                                      LDAA         #$1E                 ;
+20f2 18 02 31 71        LFT_MOTOR_LOOP          MOVW         $2,X+,$2,Y+          ;Copy the velocity profile of the right motor into the left motor
+20f6 43                                         DECA                              ;
+20f7 26 f9                                      BNE          LFT_MOTOR_LOOP       ;
+20f9 3d                                         RTS                               ;
+                        
+                        ;Subroutine 3 that displays the velocity profile to the terminal
+                        ;Printf the first few lines
+20fa cc 10 be           SUB3                    LDD           #PRINT_LN_3         ; Print velocity profile header
+20fd fe ee 88                                   LDX           PRINTF              ;
+2100 15 00                                      JSR           0,X                 ;
+                        ;Loop through and print the velocity profiles
+2102 ce 11 00           AGAIN                   LDX           #RT_MOTOR_VEL_LOC   ;
+2105 ec 31                                      LDD           2,X+                ;
+2107 3b                                         PSHD                              ;
+2108 dd 00                                      LDY           $00                 ;
+210a 35                                         PSHY                              ;
+210b cc 10 d6                                   LDD           #PRINT_VEL_LNS      ;
+210e fe ee 88                                   LDX           PRINTF              ;
+2111 15 00                                      JSR           0,X                 ;
+2113 02                                         INY                               ;
+2114 8d 00 29                                   CPY           #$29                ;
+2117 26 e9                                      BNE           AGAIN               ;
+                        ;Print out the last few lines
+2119 3d                                         RTS                               ;
+
+Executed: Wed Dec 02 12:05:16 2015
+Total cycles: 374, Total bytes: 540
+Total errors: 0, Total warnings: 0

@@ -1,75 +1,83 @@
 
-3_8A.asm               Assembled with CASM12Z  11/2/2015  1:11:24 PM  PAGE 1
+as12, an absolute assembler for Motorola MCU's, version 1.2h
 
+                        ;Lab 3.8
+                        ;Programmer Name: Zachary Hall, Andrew Bowns
+                        ;Purpose: Simulates control of two DC motors.  
+                        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                        ;Data
+                        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                        ;
+                        ;$HC12
+1000                                            ORG           $1000
+1000 00 00              T_A                     FDB           $0000            ;Memory locations $0800-$0801
+1002 00 00              T_C                     FDB           $0000            ;Memory locations $0802-$0803
+1004 00 00              T_TOTAL                 FDB           $0000            ;Memory locations $0804-$0805
+1006 00 00              DELTA_VELOCITY_LOC      FDB           $0000            ;Memory locations $0806-$0807
+1008 00 00              FILLER                  FDB           $0000            ;Memory locations $0808-$0809
+100a 00 00              V_CONSTANT_Loc          FDB           $0000            ;Memory locations $080A-$080B
+100c 00 00              T_TOTAL_Loc             FDB           $0000            ;Memory locations $080C-$080D
+100e 00 00              INCREM_NUM                                FDB                          $0000                           ;Memory location to store the incremental value
+4000                    RT_MOTOR_VEL_LOC                EQU                          $4000                           ;Starting memory of right motor
+4100                    LFT_MOTOR_VEL_LOC                EQU                          $4100                           ;Starting memory of left motor
+                        
+                        ;main program that calls two subroutines
+4200                                            ORG           $4200                           ;Begin Program address
+4200 16 42 06                                                           JSR                          SUB1                           ;Go to subroutine 1
+4203 16 42 1f                                                           JSR                          SUB2                           ;Go to subroutine 2
+                                                                        END
+                                                                        
+                        ;Subroutine 1: call-by-value using registers D, X, and Y
+4206 fc 10 0c           SUB1                                           LDD           T_TOTAL_LOC      ;Load location of total time into register D
+4209 7c 10 04                                                           STD                          T_TOTAL                   ;Store the total time into memory
+420c ce 00 05                                                           LDX                          #$0005                   ;Load the divisor to find 20% of the total time
+420f 18 10                                                              IDIV                                                     ;Divide D by X and store in register X
+4211 7e 10 00                                                           STX                          T_A                           ;Store register X in memory
+4214 fd 10 00                                                           LDY                            T_A                           ;Load the acceleration/deceleration time into register y
+4217 cc 00 03                                                           LDD                          #$0003                   ;Load 3 into register D
+421a 13                                                                  EMUL                                                     ;Multiply the 20% value in Y by 3 to get the 60% constant velocity time
+421b 7c 10 02                                                           STD                          T_C                           ;Store that number into memory
+421e 3d                                                                 RTS
+                                                                        
+                        ;Subroutine 2: call-by-reference using the address of the parameter
+                                                                           ;Calculate 10 velocity values for each of the acceleration, constant, and deceleration intervals
+421f ce 00 0a           SUB2                                           LDX                           #$000A                      ;Store 10 into register x for the number of time intervals
+4222 fc 10 0a           RT_MOTOR                                LDD                          V_CONSTANT_LOC   ;Load the constant velocity number into register D
+4225 18 10                                                              IDIV                                                       ;Divide D by x and store the result in X
+4227 7e 10 0e                                                           STX                            INCREM_NUM           ;store the result into memory
+422a cc 00 00                                                           LDD                          #0                           ;Make D zero
+422d 7c 40 00                                                           STD                          RT_MOTOR_VEL_LOC ;Store D into memory
+4230 cd 40 00                                                           LDY                          #RT_MOTOR_VEL_LOC;Load the address of the right motor velocity profile into register Y
+                                                                        
+                                                                        ;Add $0064 to each memory location until reaching $03E8
+4233 f3 10 0e           ACCEL                                        ADDD                    INCREM_NUM             ;Add the velocity increment value to D and store it in D
+4236 6c 61                                                              STD                          $2,+Y                           ;Increment the memory location and store register D into memory
+4238 bc 10 0a                                                           CPD                          V_CONSTANT_LOC   ;Compare D to the final velocity
+423b 2b f6                                                              BMI                          ACCEL                           ;If D is less, repeat the process
+423d b7 45                                                              TFR                          D,X                           ;Move contents of register D into X
+423f 86 08                                                              LDAA                  #$08                           ;Load accumulator A with a count of 8
+                                                                        
+4241 6e 61              CONST                                        STX                          $2,+Y                           ;Store the constant velocity into 9 more memory locations
+4243 81 00                                                              CMPA                  #$00
+4245 27 03                                                              BEQ                          DECEL
+4247 43                                                                 DECA
+4248 20 f7                                                              BRA                          CONST
+                                                                        
+424a b7 54              DECEL                                        TFR                          X,D                             ;Transfer the final velocity back into D
+424c b3 10 0e           DEC_LOOP                                SUBD                  INCREM_NUM           ;Subtract the increment value from D
+424f 6c 61                                                              STD                          $2,+Y                           ;Store the values in subsequent memory locations
+4251 8c 00 00                                                           CPD                          #0
+4254 26 f6                                                              BNE                          DEC_LOOP
+                                                                        
+4256 cd 41 00           LFT_MOTOR                                LDY                          #LFT_MOTOR_VEL_LOC          
+4259 ce 40 00                                                           LDX                          #RT_MOTOR_VEL_LOC
+425c 86 1e                                                              LDAA                  #$1E
+425e 18 02 31 71        LFT_MOTOR_LOOP                        MOVW                  $2,X+,$2,Y+           ;Copy the velocity profile of the right motor into the left motor
+4262 43                                                                 DECA
+4263 26 f9                                                              BNE                          LFT_MOTOR_LOOP
+4265 3d                                                                 RTS
+                                                                                
 
-
-                            1  ;Lab 3.8
-                            2  ;Programmer Name: Zachary Hall
-                            3  ;Purpose: Simulates control of two DC motors.  
-                            4  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                               ;;;;;;;;
-                            5  ;Data
-                            6  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                               ;;;;;;;;
-                            7  ;
- 000800                   8                                     ORG    $0800
- 000800      0000         9  T_A                                        FDB    
-                                   $0000                                       
-                                ;Memory locations $0800-$0801
- 000802      0000        10  T_C                                        FDB    
-                                   $0000                                       
-                                ;Memory locations $0802-$0803
- 000804      0000        11  T_TOTAL                            FDB        
-                               $0000                                        
-                               ;Memory locations $0804-$0805
- 000806      0000        12  DELTA_VELOCITY_LOC FDB        $0000               
-                                                ;Memory locations $0806-$0807
- 000808      0000        13  FILLER                             FDB        
-                               $0000                                        
-                               ;Memory locations $0808-$0809
- 00080A      0000        14  V_CONSTANT_Loc             FDB        $0000       
-                                                                ;Memory 
-                               locations $080A-$080B
- 00080C      0000        15  T_TOTAL_Loc                        FDB        
-                               $0000                                        
-                               ;Memory locations $080C-$080D
-                           16  
-                           17  ;LEFT_MOTOR                      EQU        
-                               ;some output pin
-                           18  ;RIGHT_MOTOR             EQU        ;some 
-                               output pin
-                           19  ;T_TOTAL                         FDB        
-                               $03E8
-                           20  
-                           21  ;main program that calls two subroutines
- 004200                  22                                     ORG        
-                               $4200
-                           23                                   ;Load .s19 
-                               info into T_TOTAL_LOC
- 004200 [03] FC0804      24                                     LDD        
-                               T_TOTAL
-                           25  ;                                        MUL
-                           26  ;Subroutine 1: call-by-value using registers 
-                               A,B,X, and Y
-                           27  ;                                        LDD    
-                                   #$T_TOTAL_LOC
-                           28  ;                                        MULT   
-                           29  ;Subroutine 2: call-by-reference using the 
-                               address of the parameter
-                           30   
-
- Symbol Table 
-
-DELTA_VELOCITY_L 000806
-
-
-3_8A.asm               Assembled with CASM12Z  11/2/2015  1:11:24 PM  PAGE 2
-
-
-
-FILLER           000808
-T_A              000800
-T_C              000802
-T_TOTAL          000804
-T_TOTAL_LOC      00080C
-V_CONSTANT_LOC   00080A
+Executed: Tue Dec 01 17:05:30 2015
+Total cycles: 144, Total bytes: 118
+Total errors: 0, Total warnings: 0

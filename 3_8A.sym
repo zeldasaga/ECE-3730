@@ -1,0 +1,19 @@
+accel      4233
+const      4241
+dec_loop   424c
+decel      424a
+delta_velocity_loc 1006
+filler     1008
+increm_num 100e
+lft_motor  4256
+lft_motor_loop 425e
+lft_motor_vel_loc 4100
+rt_motor   4222
+rt_motor_vel_loc 4000
+sub1       4206
+sub2       421f
+t_a        1000
+t_c        1002
+t_total    1004
+t_total_loc 100c
+v_constant_loc 100a
